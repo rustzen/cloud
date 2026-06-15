@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model Product {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  licenses    License[]
+  versions    AppVersion[]
+}
+
+model License {
+  id              String          @id @default(cuid())
+  productId       String
+  product         Product         @relation(fields: [productId], references: [id])
+  licenseKey      String          @unique
+  status          LicenseStatus   @default(ACTIVE)
+  plan            String          @default("pro")
+  customerEmail   String?
+  provider        String?
+  providerOrderId String?
+  expiresAt       DateTime?
+  maxDevices      Int             @default(3)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  devices         LicenseDevice[]
+}
+
+model LicenseDevice {
+  id          String   @id @default(cuid())
+  licenseId   String
+  license     License  @relation(fields: [licenseId], references: [id])
+  deviceId    String
+  deviceName  String?
+  appVersion  String?
+  activatedAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([licenseId, deviceId])
+}
+
+model AppVersion {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  version     String
+  platform    String   @default("macos")
+  downloadUrl String?
+  notes       String?
+  publishedAt DateTime @default(now())
+
+  @@unique([productId, version, platform])
+}
+
+model BillingEvent {
+  id            String   @id @default(cuid())
+  provider      String
+  eventName     String
+  eventId       String?  @unique
+  orderId       String?
+  customerEmail String?
+  payload       Json
+  createdAt     DateTime @default(now())
+}
+
+enum LicenseStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  REVOKED
+}
