@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ valid: false, error: 'Invalid license' }, { status: 403 });
   }
 
+  if (license.expiresAt && license.expiresAt.getTime() <= Date.now()) {
+    return NextResponse.json({ valid: false, error: 'License expired' }, { status: 403 });
+  }
+
   const knownDevice = license.devices.find((device) => device.deviceId === data.device_id);
 
   if (!knownDevice && license.devices.length >= license.maxDevices) {
