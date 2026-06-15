@@ -41,17 +41,22 @@ export async function POST(request: NextRequest) {
   const eventName = request.headers.get('x-event-name') ?? payload?.meta?.event_name ?? 'unknown';
   const eventId = payload?.meta?.webhook_id ? String(payload.meta.webhook_id) : null;
   const fallbackEventId = `${eventName}:${getOrderId(payload) || randomUUID()}`;
+  const effectiveEventId = eventId ?? fallbackEventId;
   const orderId = getOrderId(payload);
   const customerEmail = getCustomerEmail(payload);
   const payloadJson = payload as Prisma.InputJsonValue;
 
+  const existingEvent = await prisma.billingEvent.findUnique({
+    where: { eventId: effectiveEventId },
+  });
+
   await prisma.billingEvent.upsert({
-    where: { eventId: eventId ?? fallbackEventId },
+    where: { eventId: effectiveEventId },
     update: { payload: payloadJson },
     create: {
       provider: 'lemonsqueezy',
       eventName,
-      eventId: eventId ?? fallbackEventId,
+      eventId: effectiveEventId,
       orderId,
       customerEmail,
       payload: payloadJson,
@@ -62,7 +67,22 @@ export async function POST(request: NextRequest) {
     const productCode = getProductCode(payload);
     const product = await prisma.product.findUnique({ where: { code: productCode } });
 
-    if (product && customerEmail) {
+    if (product && customerEmail && !existingEvent) {
+      const existingLicense = orderId
+        ? await prisma.license.findFirst({
+            where: {
+              productId: product.id,
+              customerEmail,
+              provider: 'lemonsqueezy',
+              providerOrderId: orderId,
+            },
+          })
+        : null;
+
+      if (existingLicense) {
+        return NextResponse.json({ ok: true });
+      }
+
       await prisma.license.create({
         data: {
           productId: product.id,

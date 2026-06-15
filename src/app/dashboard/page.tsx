@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { hasAdminSession } from '@/lib/auth';
 
 const modules = [
-  { title: 'Products', href: '/dashboard', description: 'Manage Rustzen Clear, Rustzen Clipboard, and future native macOS clients.' },
+  { title: 'Products', href: '/dashboard', description: 'Manage RustZen Clear, RustZen Clipboard, and future native macOS clients.' },
   { title: 'Licenses', href: '/dashboard/licenses', description: 'Create, verify, revoke, and inspect local-client license keys.' },
   { title: 'Devices', href: '/dashboard/licenses', description: 'Review activated macOS devices and enforce device limits.' },
   { title: 'Versions', href: '/dashboard/versions', description: 'Publish release metadata consumed by desktop update checks.' },
@@ -24,7 +24,7 @@ export default async function DashboardPage() {
             <span className="rz-cloud-mark">R</span>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--rz-clipboard)]">
-                Rustzen Cloud
+                RustZen Cloud
               </p>
               <h1 className="mt-2 text-4xl font-bold text-[var(--rz-ink)]">
                 Client control plane
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
           </div>
           <p className="max-w-3xl text-base leading-7 text-[var(--rz-muted)]">
             Manage licensing, activated devices, release metadata, and API health for the
-            native Rustzen Clear and Rustzen Clipboard macOS clients. Local cleanup data and
+            native RustZen Clear and RustZen Clipboard macOS clients. Local cleanup data and
             clipboard history stay on the user&apos;s Mac.
           </p>
           <div className="flex flex-wrap gap-2">

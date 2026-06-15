@@ -3,8 +3,8 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Rustzen Cloud',
-  description: 'Cloud dashboard and API surface for Rustzen macOS products.',
+  title: 'RustZen Cloud',
+  description: 'Cloud dashboard and API surface for RustZen macOS products.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -28,7 +28,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <span className="rz-cloud-mark">R</span>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--rz-clipboard)]">
-              Rustzen Cloud
+              RustZen Cloud
             </p>
             <h1 className="mt-1 text-2xl font-semibold text-[var(--rz-ink)]">Admin sign in</h1>
           </div>

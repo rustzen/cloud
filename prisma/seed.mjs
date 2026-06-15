@@ -8,7 +8,7 @@ async function main() {
     update: {},
     create: {
       code: 'rustzen-clear',
-      name: 'Rustzen Clear',
+      name: 'RustZen Clear',
       description: 'A lightweight macOS cleaner for developer environments.',
     },
   });
@@ -18,7 +18,7 @@ async function main() {
     update: {},
     create: {
       code: 'rustzen-clipboard',
-      name: 'Rustzen Clipboard',
+      name: 'RustZen Clipboard',
       description: 'A local-first clipboard history app for macOS.',
     },
   });
