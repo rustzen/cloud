@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import {
+  isLicenseTokenConfigError,
+  licenseError,
+  licenseStatus,
+  licenseTokenConfigError,
+  readJsonBody,
+  signLicenseToken,
+} from '@/lib/license-api';
 import { z } from 'zod';
+
+export const runtime = 'nodejs';
 
 const activateSchema = z.object({
   product: z.string().min(1),
@@ -10,62 +21,135 @@ const activateSchema = z.object({
   app_version: z.string().optional(),
 });
 
+const MAX_ACTIVATION_ATTEMPTS = 3;
+
+function isRetryableActivationError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === 'P2034' || error.code === 'P2002')
+  );
+}
+
 export async function POST(request: NextRequest) {
-  const parsed = activateSchema.safeParse(await request.json());
+  const body = await readJsonBody(request);
+  if (!body) {
+    return licenseError('invalid_json', 400);
+  }
+
+  const parsed = activateSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ valid: false, error: 'Invalid request' }, { status: 400 });
+    return licenseError('validation_failed', 400, parsed.error.issues);
   }
 
   const data = parsed.data;
 
-  const license = await prisma.license.findFirst({
-    where: {
-      licenseKey: data.license_key,
-      product: { code: data.product },
-    },
-    include: { devices: true, product: true },
-  });
+  for (let attempt = 1; attempt <= MAX_ACTIVATION_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          const license = await tx.license.findFirst({
+            where: {
+              licenseKey: data.license_key,
+              product: { code: data.product },
+            },
+            include: { product: true },
+          });
 
-  if (!license || license.status !== 'ACTIVE') {
-    return NextResponse.json({ valid: false, error: 'Invalid license' }, { status: 403 });
+          if (!license) {
+            return { success: false as const, error: 'license_key_invalid', status: 403 as const };
+          }
+
+          if (license.status !== 'ACTIVE') {
+            return { success: false as const, error: 'license_not_active', status: 403 as const };
+          }
+
+          if (license.expiresAt && license.expiresAt.getTime() <= Date.now()) {
+            return { success: false as const, error: 'license_not_active', status: 403 as const };
+          }
+
+          const deviceKey = {
+            licenseId: license.id,
+            deviceId: data.device_id,
+          };
+
+          const knownDevice = await tx.licenseDevice.findUnique({
+            where: { licenseId_deviceId: deviceKey },
+          });
+
+          if (knownDevice) {
+            await tx.licenseDevice.update({
+              where: { licenseId_deviceId: deviceKey },
+              data: {
+                deviceName: data.device_name,
+                appVersion: data.app_version,
+                lastSeenAt: new Date(),
+              },
+            });
+          } else {
+            const activeDeviceCount = await tx.licenseDevice.count({
+              where: { licenseId: license.id },
+            });
+
+            if (activeDeviceCount >= license.maxDevices) {
+              return {
+                success: false as const,
+                error: 'device_limit_reached',
+                status: 403 as const,
+                detail: { max_devices: license.maxDevices },
+              };
+            }
+
+            await tx.licenseDevice.create({
+              data: {
+                licenseId: license.id,
+                deviceId: data.device_id,
+                deviceName: data.device_name,
+                appVersion: data.app_version,
+              },
+            });
+          }
+
+          const boundDeviceCount = await tx.licenseDevice.count({
+            where: { licenseId: license.id },
+          });
+
+          return {
+            success: true as const,
+            token: signLicenseToken({
+              licenseKey: license.licenseKey,
+              product: data.product,
+              deviceId: data.device_id,
+              plan: license.plan,
+              expiresAt: license.expiresAt,
+            }),
+            status: licenseStatus(license.plan, license.expiresAt, boundDeviceCount),
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+
+      if (!result.success) {
+        return licenseError(result.error, result.status, 'detail' in result ? result.detail : undefined);
+      }
+
+      return NextResponse.json({ token: result.token, status: result.status });
+    } catch (error) {
+      if (isLicenseTokenConfigError(error)) {
+        return licenseTokenConfigError();
+      }
+
+      if (isRetryableActivationError(error)) {
+        if (attempt < MAX_ACTIVATION_ATTEMPTS) {
+          continue;
+        }
+
+        return licenseError('activation_conflict', 409);
+      }
+
+      throw error;
+    }
   }
 
-  if (license.expiresAt && license.expiresAt.getTime() <= Date.now()) {
-    return NextResponse.json({ valid: false, error: 'License expired' }, { status: 403 });
-  }
-
-  const knownDevice = license.devices.find((device) => device.deviceId === data.device_id);
-
-  if (!knownDevice && license.devices.length >= license.maxDevices) {
-    return NextResponse.json({ valid: false, error: 'Device limit reached' }, { status: 403 });
-  }
-
-  await prisma.licenseDevice.upsert({
-    where: {
-      licenseId_deviceId: {
-        licenseId: license.id,
-        deviceId: data.device_id,
-      },
-    },
-    update: {
-      deviceName: data.device_name,
-      appVersion: data.app_version,
-      lastSeenAt: new Date(),
-    },
-    create: {
-      licenseId: license.id,
-      deviceId: data.device_id,
-      deviceName: data.device_name,
-      appVersion: data.app_version,
-    },
-  });
-
-  return NextResponse.json({
-    valid: true,
-    product: license.product.code,
-    plan: license.plan,
-    expires_at: license.expiresAt,
-    max_devices: license.maxDevices,
-  });
+  throw new Error('Unreachable activation retry state');
 }

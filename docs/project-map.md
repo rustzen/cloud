@@ -1,15 +1,15 @@
 # rustzen-cloud Project Map
 
 Status: current project map
-Date: 2026-06-15
+Date: 2026-06-16
 Project type: Peripheral RustZen Cloud
 
 ## Current Facts
 
-Command evidence from 2026-06-15:
+Command evidence:
 
-- `git -C rustzen-cloud status --short --branch`: branch `main...origin/main`
-  during the validation pass.
+- `git -C rustzen-cloud status --short --branch`: branch
+  `main...origin/main [ahead 1]` on 2026-06-16.
 - `git -C rustzen-cloud status --ignored --short`: `.env.local`, `.next/`,
   `.vercel/`, and `node_modules/` are ignored/local-only.
 - `pnpm dlx vercel env ls`: project `abin-projects/rustzen-cloud` has no
@@ -38,9 +38,9 @@ Commands below come from `package.json`.
 | Command | Script | Verification |
 | --- | --- | --- |
 | `pnpm dev` | `next dev` | Not run in this pass |
-| `pnpm build` | `node scripts/with-env.mjs prisma generate && next build` | Passed on 2026-06-15 |
+| `pnpm build` | `node scripts/with-env.mjs prisma generate && next build` | Passed on 2026-06-16 |
 | `pnpm start` | `next start` | Not run; requires prior build |
-| `pnpm lint` | `eslint .` | Passed on 2026-06-15 |
+| `pnpm lint` | `eslint .` | Passed on 2026-06-16 |
 | `pnpm db:generate` | `node scripts/with-env.mjs prisma generate` | Passed on 2026-06-15 |
 | `pnpm db:push` | `node scripts/with-env.mjs prisma db push` | Passed against local `rustzen_cloud_test` on 2026-06-15 |
 | `pnpm db:seed` | `node scripts/with-env.mjs node prisma/seed.mjs` | Passed against local `rustzen_cloud_test` on 2026-06-15 |
@@ -65,9 +65,10 @@ Commands below come from `package.json`.
 | `src/app/dashboard/page.tsx` | Dashboard index | source |
 | `src/app/dashboard/licenses/page.tsx` | License and device management | source |
 | `src/app/dashboard/versions/page.tsx` | Release metadata management | source |
-| `src/app/api/**/route.ts` | Cloud API routes | source |
+| `src/app/api/**/route.ts` | Cloud API routes | mixed tracked and untracked source candidates |
 | `src/lib/auth.ts` | Cookie session signing and password check | source |
-| `src/lib/license-server.ts` | License-server proxy helper | source |
+| `src/lib/license-server.ts` | Legacy license-server proxy helper | source |
+| `src/lib/license-api.ts` | Local license API token, status, and error helpers | untracked source candidate |
 | `src/lib/prisma.ts` | Prisma client singleton | source |
 | `.env.local` | Local secrets and test DB URL | ignored/local-only |
 | `.vercel/` | Local Vercel project link | ignored/local-only |
@@ -78,9 +79,13 @@ Commands below come from `package.json`.
 
 | Route | File | Responsibility | Status |
 | --- | --- | --- | --- |
-| `POST /api/licenses/activate` | `src/app/api/licenses/activate/route.ts` | Local Prisma-backed license activation | source |
-| `POST /api/ls/activate` | `src/app/api/ls/activate/route.ts` | Proxy activation request to external license server | source |
-| `GET /api/ls/health` | `src/app/api/ls/health/route.ts` | Proxy external license-server health | source |
+| `POST /api/licenses/activate` | `src/app/api/licenses/activate/route.ts` | Local Prisma-backed license activation | modified tracked |
+| `GET /api/licenses/verify` | `src/app/api/licenses/verify/route.ts` | Verify token, license, and device binding | untracked source candidate |
+| `POST /api/licenses/refresh` | `src/app/api/licenses/refresh/route.ts` | Refresh license token and status | untracked source candidate |
+| `POST /api/licenses/deactivate` | `src/app/api/licenses/deactivate/route.ts` | Remove current device binding | untracked source candidate |
+| `GET /api/licenses/health` | `src/app/api/licenses/health/route.ts` | Local Prisma-backed license API health | untracked source candidate |
+| `POST /api/ls/activate` | `src/app/api/ls/activate/route.ts` | Legacy proxy activation request to external license server | source |
+| `GET /api/ls/health` | `src/app/api/ls/health/route.ts` | Legacy proxy external license-server health | source |
 | `GET /api/versions?product=<code>` | `src/app/api/versions/route.ts` | Latest release metadata by product/platform | source |
 | `POST /api/webhooks/lemonsqueezy` | `src/app/api/webhooks/lemonsqueezy/route.ts` | Verify Lemon Squeezy signature and create billing/license records | source |
 
@@ -111,7 +116,7 @@ From `.env.example`:
 - `RUSTZEN_ADMIN_SECRET`
 - `RUSTZEN_LICENSE_SERVER_URL`
 - `RUSTZEN_LICENSE_SERVER_TOKEN`
-- `RUSTZEN_LICENSE_SECRET` (reserved/not wired in current `src/`)
+- `LICENSE_JWT_SECRET`
 - `LEMONSQUEEZY_WEBHOOK_SECRET`
 
 Real preview/prod Vercel values are not configured as of `pnpm dlx vercel env ls`
@@ -129,10 +134,11 @@ on 2026-06-15.
 - Admin session signing depends on `RUSTZEN_ADMIN_SECRET`; the code contains a
   development fallback for local use and throws in production when the secret is
   missing.
-- License-server proxy requests depend on `RUSTZEN_LICENSE_SERVER_URL` and
-  optional bearer token.
-- `RUSTZEN_LICENSE_SECRET` is present in `.env.example` but not referenced by
-  current `src/`; treat it as reserved/not wired until source changes.
+- Legacy license-server proxy requests depend on `RUSTZEN_LICENSE_SERVER_URL`
+  and optional bearer token.
+- Local Prisma-backed license routes run on the Node runtime and sign opaque
+  license bearer tokens with `LICENSE_JWT_SECRET`. Production fails closed when
+  no signing secret is configured.
 - `.env.local`, `.next/`, `.vercel/`, and `node_modules/` are ignored/local-only
   and not committed deployment facts.
 - Vercel domain, production env, preview env, and runtime limits are not

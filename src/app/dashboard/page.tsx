@@ -8,7 +8,7 @@ const modules = [
   { title: 'Devices', href: '/dashboard/licenses', description: 'Review activated macOS devices and enforce device limits.' },
   { title: 'Versions', href: '/dashboard/versions', description: 'Publish release metadata consumed by desktop update checks.' },
   { title: 'Orders', href: '/dashboard/licenses', description: 'Sync payment provider orders without storing private local client data.' },
-  { title: 'License Server', href: '/api/ls/health', description: 'Check API health and proxy activation or verification requests.' },
+  { title: 'License API', href: '/api/licenses/health', description: 'Check local Prisma-backed licensing API health.' },
 ];
 
 export default async function DashboardPage() {
@@ -57,9 +57,11 @@ export default async function DashboardPage() {
           <h2 className="text-xl font-semibold text-[var(--rz-ink)]">API endpoints</h2>
           <div className="mt-4 grid gap-2 text-sm text-[var(--rz-muted)] md:grid-cols-2">
             <code>POST /api/licenses/activate</code>
+            <code>GET /api/licenses/verify</code>
+            <code>POST /api/licenses/refresh</code>
+            <code>POST /api/licenses/deactivate</code>
+            <code>GET /api/licenses/health</code>
             <code>GET /api/versions?product=rustzen-clear</code>
-            <code>GET /api/ls/health</code>
-            <code>POST /api/ls/activate</code>
             <code>POST /api/webhooks/lemonsqueezy</code>
           </div>
         </div>

@@ -49,7 +49,7 @@ truth. They are local runtime/dependency/deploy-link artifacts.
 | `scripts/with-env.mjs` | source | Loads `.env.local`/`.env` before Prisma CLI commands |
 | `scripts/verify-db.mjs` | source | Verifies DB connection and table counts |
 | `src/app` | source | Next.js App Router pages and API routes |
-| `src/lib` | source | Admin session, Prisma client, license-server proxy |
+| `src/lib` | source | Admin session, Prisma client, local license API helpers, legacy license-server proxy |
 | `.vercel/` | ignored/local-only | Local Vercel project link; not deploy truth |
 | `.next/` | ignored/local-only | Local Next.js build output |
 | `node_modules/` | ignored/local-only | Local dependency install output |
@@ -85,8 +85,8 @@ Use Volta-managed Node, npm, pnpm, and yarn on this machine.
 - Vercel domain, preview/prod env, serverless runtime limits, and production
   database target are not verified.
 - Prisma schema or database changes require a separate DB migration/review gate.
-- Lemon Squeezy webhook secret, admin session secret, and license-server token
-  changes require security review.
+- Lemon Squeezy webhook secret, admin session secret, license token signing, and
+  legacy license-server proxy token changes require security review.
 
 ## Required Checks After Changes
 

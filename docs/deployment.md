@@ -1,7 +1,7 @@
 # rustzen-cloud Deployment Notes
 
 Status: current deployment notes
-Date: 2026-06-15
+Date: 2026-06-16
 
 ## Deployment Classification
 
@@ -36,13 +36,17 @@ From `.env.example`:
 
 | Group | Env names | Review concern |
 | --- | --- | --- |
-| Database | `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_URL` | Prisma connectivity and migration target |
-| Public URL | `NEXT_PUBLIC_APP_URL` | Callback/link consistency |
+| Database | `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` | Prisma connectivity and migration target |
+| Database platform reserve | `POSTGRES_URL` | Vercel/Postgres compatibility value; current Prisma datasource does not read it |
+| Public URL reserve | `NEXT_PUBLIC_APP_URL` | Reserved for future callback/link consistency; current source does not read it |
 | Admin auth | `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET` | Password handling and session signing |
-| License server | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Upstream trust boundary and bearer token |
-| License/webhook | `RUSTZEN_LICENSE_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET` | `LEMONSQUEEZY_WEBHOOK_SECRET` is wired for webhook HMAC; `RUSTZEN_LICENSE_SECRET` is reserved/not wired in current `src/` |
+| License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; `LEMONSQUEEZY_WEBHOOK_SECRET` verifies webhook HMAC |
+| Legacy license proxy | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Optional external license-server compatibility path, not the default desktop-client API |
 
 Preview and production Vercel values are not configured as of 2026-06-15.
+Lemon Squeezy products must send `custom_data.product` with the RustZen product
+code; webhook ingestion records events without creating a license when the
+product code is missing or unknown.
 
 ## Local Database Verification
 
@@ -80,8 +84,8 @@ Before any deploy:
 5. Run `pnpm db:generate`, `pnpm lint`, and `pnpm build`.
 6. If database behavior changed, validate against a local test DB with
    `pnpm db:push`, `pnpm db:seed`, and `pnpm db:verify`.
-7. Confirm Vercel project/team/domain and runtime limits with the real linked
-   project.
+7. Confirm Vercel project/team/domain and keep Prisma-backed API routes on the
+   Node runtime.
 8. Record verification evidence in the task report.
 
 `pnpm db:push` against production, production Vercel deploys, and real webhook
