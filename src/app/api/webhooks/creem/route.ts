@@ -1,12 +1,18 @@
 import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { normalizeCreemWebhook, verifyCreemSignature } from '@/lib/creem';
+import { normalizeCreemWebhook, RUSTZEN_CLEAR_CREEM_PRODUCT_ID, verifyCreemSignature } from '@/lib/creem';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
 const licenseCreatingEvents = new Set(['checkout.completed', 'subscription.paid']);
+const licenseEndingEvents = new Set(['subscription.canceled', 'subscription.expired']);
+
+function productCodeForCreemProduct(productId: string | null) {
+  const rustzenClearProductId = process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID || RUSTZEN_CLEAR_CREEM_PRODUCT_ID;
+  return productId === rustzenClearProductId ? 'rustzen-clear' : null;
+}
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -47,24 +53,50 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!licenseCreatingEvents.has(fulfillment.eventName)) return;
-    if (!fulfillment.productCode || !fulfillment.customerEmail || !fulfillment.licenseKey || existingEvent) return;
+    const productCode = fulfillment.productCode ?? productCodeForCreemProduct(fulfillment.productId);
+    const providerOrderId = fulfillment.subscriptionId ?? fulfillment.orderId;
 
-    const product = await tx.product.findUnique({ where: { code: fulfillment.productCode } });
+    if (licenseEndingEvents.has(fulfillment.eventName) && providerOrderId) {
+      await tx.license.updateMany({
+        where: { provider: fulfillment.provider, providerOrderId },
+        data: {
+          status: fulfillment.eventName === 'subscription.expired' ? 'EXPIRED' : 'INACTIVE',
+          expiresAt: fulfillment.currentPeriodEndDate,
+        },
+      });
+      return;
+    }
+
+    if (!licenseCreatingEvents.has(fulfillment.eventName)) return;
+    if (!productCode || !fulfillment.customerEmail || existingEvent) return;
+
+    const product = await tx.product.findUnique({ where: { code: productCode } });
     if (!product) return;
 
-    const existingLicense = fulfillment.orderId
+    const existingLicense = providerOrderId
       ? await tx.license.findFirst({
           where: {
             productId: product.id,
             customerEmail: fulfillment.customerEmail,
             provider: fulfillment.provider,
-            providerOrderId: fulfillment.orderId,
+            providerOrderId,
           },
         })
       : null;
 
-    if (existingLicense) return;
+    if (existingLicense) {
+      await tx.license.update({
+        where: { id: existingLicense.id },
+        data: {
+          status: 'ACTIVE',
+          expiresAt: fulfillment.currentPeriodEndDate,
+          maxDevices: 3,
+        },
+      });
+      return;
+    }
+
+    if (!fulfillment.licenseKey) return;
 
     await tx.license.create({
       data: {
@@ -74,7 +106,8 @@ export async function POST(request: NextRequest) {
         plan: 'pro',
         customerEmail: fulfillment.customerEmail,
         provider: fulfillment.provider,
-        providerOrderId: fulfillment.orderId,
+        providerOrderId,
+        expiresAt: fulfillment.currentPeriodEndDate,
         maxDevices: 3,
       },
     });

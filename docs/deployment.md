@@ -39,14 +39,16 @@ From `.env.example`:
 | Database | `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` | Prisma connectivity and migration target |
 | Database platform reserve | `POSTGRES_URL` | Vercel/Postgres compatibility value; current Prisma datasource does not read it |
 | Public URL reserve | `NEXT_PUBLIC_APP_URL` | Reserved for future callback/link consistency; current source does not read it |
-| Admin auth | `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET` | Password handling and session signing |
-| License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; `LEMONSQUEEZY_WEBHOOK_SECRET` verifies webhook HMAC |
+| Admin auth | `RUSTZEN_ADMIN_ALLOWED_HOSTS`, `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_API_TOKEN` | Dashboard host allowlist, credential handling, session signing, and operational API access |
+| License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `CREEM_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; webhook secrets verify provider HMAC signatures |
+| Billing provider checkout | `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, `CREEM_CHECKOUT_SUCCESS_URL` | Rustzen Clear Pro checkout and subscription fulfillment; current product identifier is `` |
 | Legacy license proxy | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Optional external license-server compatibility path, not the default desktop-client API |
 
 Preview and production Vercel values are not configured as of 2026-06-15.
-Lemon Squeezy products must send `custom_data.product` with the RustZen product
-code; webhook ingestion records events without creating a license when the
-product code is missing or unknown.
+Rustzen Clear Pro is a Billing provider subscription at website-listed Pro price. Billing provider webhook
+events must identify the Rustzen product through metadata or the configured
+product identifier; webhook ingestion records events without creating a license when the
+product cannot be resolved.
 
 ## Local Database Verification
 
@@ -86,7 +88,10 @@ Before any deploy:
    `pnpm db:push`, `pnpm db:seed`, and `pnpm db:verify`.
 7. Confirm Vercel project/team/domain and keep Prisma-backed API routes on the
    Node runtime.
-8. Record verification evidence in the task report.
+8. Confirm the Billing provider live product remains subscription-only:
+   `price=1000`, `currency=USD`, `billing_type=recurring`, and
+   `billing_period=every-year`.
+9. Record verification evidence in the task report.
 
 `pnpm db:push` against production, production Vercel deploys, and real webhook
 testing require explicit user approval.
@@ -104,5 +109,6 @@ testing require explicit user approval.
 - Vercel preview/prod environment values; current Vercel project has no env vars.
 - Production PostgreSQL database availability.
 - Production Prisma migration state.
-- Lemon Squeezy webhook delivery.
+- Billing provider webhook delivery and live product configuration.
+- Lemon Squeezy webhook delivery for the legacy route.
 - Desktop client consumption of activation or version routes.
