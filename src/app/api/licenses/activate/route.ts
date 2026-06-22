@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import {
+  buildCreemLicenseActivationRequest,
+  getCreemApiBaseUrl,
+  normalizeCreemLicense,
+} from '@/lib/creem';
+import {
   isLicenseTokenConfigError,
   licenseError,
   licenseStatus,
@@ -23,6 +28,66 @@ const activateSchema = z.object({
 
 const MAX_ACTIVATION_ATTEMPTS = 3;
 
+async function importCreemLicenseIfNeeded(input: {
+  product: string;
+  licenseKey: string;
+  deviceId: string;
+}) {
+  if (input.product !== 'rustzen-clear') return;
+
+  const apiKey = process.env.CREEM_API_KEY;
+  const productId = process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID;
+  if (!apiKey || !productId) return;
+
+  const existingLicense = await prisma.license.findFirst({
+    where: {
+      licenseKey: input.licenseKey,
+      product: { code: input.product },
+    },
+  });
+
+  if (existingLicense) return;
+
+  const response = await fetch(`${getCreemApiBaseUrl({ apiKey })}/v1/licenses/activate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    },
+    body: JSON.stringify(buildCreemLicenseActivationRequest(input.licenseKey, input.deviceId)),
+  });
+
+  if (!response.ok) return;
+
+  const creemLicense = normalizeCreemLicense(await response.json().catch(() => null), productId);
+  if (!creemLicense) return;
+
+  const product = await prisma.product.findUnique({ where: { code: input.product } });
+  if (!product) return;
+
+  await prisma.license.upsert({
+    where: { licenseKey: creemLicense.key },
+    update: {
+      status: 'ACTIVE',
+      plan: 'pro',
+      provider: 'creem',
+      providerOrderId: creemLicense.id,
+      expiresAt: creemLicense.expiresAt,
+      maxDevices: creemLicense.maxDevices,
+    },
+    create: {
+      productId: product.id,
+      licenseKey: creemLicense.key,
+      status: 'ACTIVE',
+      plan: 'pro',
+      provider: 'creem',
+      providerOrderId: creemLicense.id,
+      expiresAt: creemLicense.expiresAt,
+      maxDevices: creemLicense.maxDevices,
+    },
+  });
+}
+
 function isRetryableActivationError(error: unknown) {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -43,6 +108,11 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
+  await importCreemLicenseIfNeeded({
+    product: data.product,
+    licenseKey: data.license_key,
+    deviceId: data.device_id,
+  });
 
   for (let attempt = 1; attempt <= MAX_ACTIVATION_ATTEMPTS; attempt += 1) {
     try {
