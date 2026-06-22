@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
 
 const modules = [
@@ -11,10 +13,27 @@ const modules = [
   { title: 'License API', href: '/api/licenses/health', description: 'Check local Prisma-backed licensing API health.' },
 ];
 
+async function getRequestOrigin() {
+  const store = await headers();
+  const forwardedHost = store.get('x-forwarded-host');
+  const host = forwardedHost ?? store.get('host');
+
+  if (!host) {
+    return process.env.NEXT_PUBLIC_APP_URL ?? 'Not configured';
+  }
+
+  const protocol = store.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  return `${protocol}://${host}`;
+}
+
 export default async function DashboardPage() {
+  await assertAdminRequestAllowed();
+
   if (!(await hasAdminSession())) {
     redirect('/login');
   }
+
+  const origin = await getRequestOrigin();
 
   return (
     <main className="min-h-screen px-6 py-12">
@@ -55,6 +74,10 @@ export default async function DashboardPage() {
 
         <div className="rz-cloud-panel mt-10 p-6">
           <h2 className="text-xl font-semibold text-[var(--rz-ink)]">API endpoints</h2>
+          <div className="mt-4 rounded-lg border border-[var(--rz-border)] bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--rz-muted)]">API base URL</p>
+            <code className="mt-2 block break-all text-sm font-semibold text-[var(--rz-ink)]">{origin}</code>
+          </div>
           <div className="mt-4 grid gap-2 text-sm text-[var(--rz-muted)] md:grid-cols-2">
             <code>POST /api/licenses/activate</code>
             <code>GET /api/licenses/verify</code>

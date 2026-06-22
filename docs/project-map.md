@@ -61,7 +61,7 @@ Commands below come from `package.json`.
 | `prisma/seed.mjs` | Seeds `rustzen-clear` and `rustzen-clipboard` products | source |
 | `src/app/layout.tsx` | Root layout and Vercel Analytics | source |
 | `src/app/page.tsx` | Redirects `/` to `/dashboard` | source |
-| `src/app/login/page.tsx` | Password-based admin login | source |
+| `src/app/login/page.tsx` | Username/password admin login behind `RUSTZEN_ADMIN_ALLOWED_HOSTS` | source |
 | `src/app/dashboard/page.tsx` | Dashboard index | source |
 | `src/app/dashboard/licenses/page.tsx` | License and device management | source |
 | `src/app/dashboard/versions/page.tsx` | Release metadata management | source |
@@ -84,9 +84,12 @@ Commands below come from `package.json`.
 | `POST /api/licenses/refresh` | `src/app/api/licenses/refresh/route.ts` | Refresh license token and status | untracked source candidate |
 | `POST /api/licenses/deactivate` | `src/app/api/licenses/deactivate/route.ts` | Remove current device binding | untracked source candidate |
 | `GET /api/licenses/health` | `src/app/api/licenses/health/route.ts` | Local Prisma-backed license API health | untracked source candidate |
+| `GET /api/billing/checkout?product=rustzen-clear` | `src/app/api/billing/checkout/route.ts` | Create a Creem checkout for Rustzen Clear Pro annual subscription | untracked source candidate |
 | `POST /api/ls/activate` | `src/app/api/ls/activate/route.ts` | Legacy proxy activation request to external license server | source |
 | `GET /api/ls/health` | `src/app/api/ls/health/route.ts` | Legacy proxy external license-server health | source |
+| `GET /api/updates/check` | `src/app/api/updates/check/route.ts` | Tauri updater manifest endpoint for Rustzen Clear | untracked source candidate |
 | `GET /api/versions?product=<code>` | `src/app/api/versions/route.ts` | Latest release metadata by product/platform | source |
+| `POST /api/webhooks/creem` | `src/app/api/webhooks/creem/route.ts` | Verify Creem signature and synchronize subscription-backed licenses | untracked source candidate |
 | `POST /api/webhooks/lemonsqueezy` | `src/app/api/webhooks/lemonsqueezy/route.ts` | Verify Lemon Squeezy signature and create billing/license records | source |
 
 ## Data Model
@@ -112,12 +115,23 @@ From `.env.example`:
 - `POSTGRES_URL_NON_POOLING`
 - `POSTGRES_URL`
 - `NEXT_PUBLIC_APP_URL`
+- `RUSTZEN_ADMIN_ALLOWED_HOSTS`
+- `RUSTZEN_ADMIN_USERNAME`
 - `RUSTZEN_ADMIN_PASSWORD`
 - `RUSTZEN_ADMIN_SECRET`
+- `RUSTZEN_ADMIN_API_TOKEN`
 - `RUSTZEN_LICENSE_SERVER_URL`
 - `RUSTZEN_LICENSE_SERVER_TOKEN`
 - `LICENSE_JWT_SECRET`
 - `LEMONSQUEEZY_WEBHOOK_SECRET`
+- `CREEM_API_KEY`
+- `CREEM_WEBHOOK_SECRET`
+- `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`
+- `CREEM_CHECKOUT_SUCCESS_URL`
+
+Rustzen Clear Pro is configured as a Creem annual subscription at USD $10/year.
+The source default product id is `prod_4Wa3YyJe3bn8hNuotPlSYj`; production env
+may override it with `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`.
 
 Real preview/prod Vercel values are not configured as of `pnpm dlx vercel env ls`
 on 2026-06-15.
@@ -130,7 +144,10 @@ on 2026-06-15.
   gate.
 - `pnpm db:push` mutates the target database. Use only against local test DB
   unless production approval is explicit.
-- Lemon Squeezy webhook verification depends on `LEMONSQUEEZY_WEBHOOK_SECRET`.
+- Creem checkout depends on `CREEM_API_KEY`; Creem webhook verification depends
+  on `CREEM_WEBHOOK_SECRET`.
+- Lemon Squeezy webhook verification depends on `LEMONSQUEEZY_WEBHOOK_SECRET`
+  for the legacy route.
 - Admin session signing depends on `RUSTZEN_ADMIN_SECRET`; the code contains a
   development fallback for local use and throws in production when the secret is
   missing.

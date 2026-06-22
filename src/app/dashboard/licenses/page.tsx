@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation';
 import { randomUUID } from 'crypto';
+import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 async function createLicense(formData: FormData) {
   'use server';
 
+  await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
   const productCode = String(formData.get('product') ?? '');
@@ -32,6 +34,7 @@ async function createLicense(formData: FormData) {
 async function revokeLicense(formData: FormData) {
   'use server';
 
+  await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
   const id = String(formData.get('id') ?? '');
@@ -42,6 +45,7 @@ async function revokeLicense(formData: FormData) {
 async function unbindDevice(formData: FormData) {
   'use server';
 
+  await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
   const deviceId = String(formData.get('deviceId') ?? '');
@@ -53,6 +57,7 @@ async function unbindDevice(formData: FormData) {
 }
 
 export default async function LicensesPage() {
+  await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
   const [products, licenses] = await Promise.all([

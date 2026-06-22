@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation';
+import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 async function publishVersion(formData: FormData) {
   'use server';
 
+  await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
   const productCode = String(formData.get('product') ?? '');
@@ -42,6 +44,7 @@ async function publishVersion(formData: FormData) {
 }
 
 export default async function VersionsPage() {
+  await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
   const [products, versions] = await Promise.all([

@@ -4,6 +4,15 @@ type JsonObject = Record<string, unknown>;
 
 export type CreemCheckoutProductCode = 'rustzen-clear';
 
+export const RUSTZEN_CLEAR_CREEM_PRODUCT_ID = 'prod_4Wa3YyJe3bn8hNuotPlSYj';
+export const RUSTZEN_CLEAR_CREEM_PRODUCT = {
+  productId: RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
+  priceCents: 1000,
+  currency: 'USD',
+  billingType: 'recurring',
+  billingPeriod: 'every-year',
+} as const;
+
 export type CreemCheckoutRequest = {
   product_id: string;
   request_id: string;
@@ -19,9 +28,12 @@ export type CreemWebhookFulfillment = {
   eventId: string | null;
   eventName: string;
   orderId: string;
+  subscriptionId: string | null;
   customerEmail: string | null;
+  productId: string | null;
   productCode: string | null;
   licenseKey: string | null;
+  currentPeriodEndDate: Date | null;
 };
 
 export type CreemLicenseImport = {
@@ -113,15 +125,22 @@ export function normalizeCreemWebhook(payload: unknown, fallbackEventName = 'unk
   const product = objectValue(object.product);
   const metadata = objectValue(object.metadata);
   const license = objectValue(object.license);
+  const subscription = objectValue(object.subscription);
+  const productId = stringValue(product.id) ?? stringValue(order.product) ?? stringValue(object.product);
+  const subscriptionId =
+    stringValue(subscription.id) ?? (stringValue(object.object) === 'subscription' ? stringValue(object.id) : null);
 
   return {
     provider: 'creem',
     eventId: stringValue(body.id),
     eventName: stringValue(body.eventType) ?? fallbackEventName,
     orderId: stringValue(order.id) ?? stringValue(object.id) ?? '',
+    subscriptionId,
     customerEmail: stringValue(customer.email),
+    productId,
     productCode: stringValue(metadata.product) ?? stringValue(body.product) ?? creemProductCode(product),
     licenseKey: stringValue(license.key) ?? stringValue(object.license_key) ?? stringValue(metadata.license_key),
+    currentPeriodEndDate: dateValue(object.current_period_end_date),
   };
 }
 
@@ -140,4 +159,12 @@ function stringValue(value: unknown) {
 
 function numberValue(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function dateValue(value: unknown) {
+  const text = stringValue(value);
+  if (!text) return null;
+
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
