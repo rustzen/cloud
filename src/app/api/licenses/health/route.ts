@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminApiToken } from '@/lib/api-security';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const apiAuthError = requireAdminApiToken(request);
+  if (apiAuthError) return apiAuthError;
+
   try {
     const products = await prisma.product.count();
     return NextResponse.json({
