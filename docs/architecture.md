@@ -201,9 +201,8 @@ expired.
 ## Dashboard Flows
 
 - `/` redirects to `/dashboard`.
-- `/login` and `/dashboard/**` first require the request host to match
-  `RUSTZEN_ADMIN_ALLOWED_HOSTS`; cross-origin Server Action submissions are
-  rejected with 404.
+- `/login` and `/dashboard/**` reject cross-origin Server Action submissions
+  with 404.
 - `/login` verifies `RUSTZEN_ADMIN_USERNAME` and `RUSTZEN_ADMIN_PASSWORD`, then
   creates a signed, expiring cookie session.
 - `/dashboard` links product, license, device, version, order, and local license
@@ -238,10 +237,9 @@ The following changes require explicit review before deploy or commit:
 - `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, Creem product ids, checkout URLs, or
   Creem webhook payload mapping.
 - `LEMONSQUEEZY_WEBHOOK_SECRET` verification logic or webhook payload mapping.
-- `RUSTZEN_ADMIN_ALLOWED_HOSTS`, `RUSTZEN_ADMIN_SECRET`,
-  `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`,
-  `RUSTZEN_ADMIN_API_TOKEN`, session cookie behavior, or admin/API
-  authorization rules.
+- `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_USERNAME`,
+  `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_API_TOKEN`, session cookie behavior,
+  or admin/API authorization rules.
 - Legacy `RUSTZEN_LICENSE_SERVER_URL` and bearer-token proxy behavior.
 - `LICENSE_JWT_SECRET` token-signing behavior.
 - Activation response shape consumed by desktop clients.
