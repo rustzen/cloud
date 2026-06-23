@@ -39,7 +39,7 @@ From `.env.example`:
 | Database | `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` | Prisma connectivity and migration target |
 | Database platform reserve | `POSTGRES_URL` | Vercel/Postgres compatibility value; current Prisma datasource does not read it |
 | Public URL reserve | `NEXT_PUBLIC_APP_URL` | Reserved for future callback/link consistency; current source does not read it |
-| Admin auth | `RUSTZEN_ADMIN_ALLOWED_HOSTS`, `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_API_TOKEN` | Dashboard host allowlist, credential handling, session signing, and operational API access |
+| Admin auth | `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_API_TOKEN` | Dashboard credential handling, session signing, and operational API access |
 | License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `CREEM_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; webhook secrets verify provider HMAC signatures |
 | Billing provider checkout | `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, `CREEM_CHECKOUT_SUCCESS_URL` | Rustzen Clear Pro checkout and subscription fulfillment; current product identifier is `` |
 | Legacy license proxy | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Optional external license-server compatibility path, not the default desktop-client API |

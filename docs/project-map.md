@@ -61,7 +61,7 @@ Commands below come from `package.json`.
 | `prisma/seed.mjs` | Seeds `rustzen-clear` and `rustzen-clipboard` products | source |
 | `src/app/layout.tsx` | Root layout and Vercel Analytics | source |
 | `src/app/page.tsx` | Redirects `/` to `/dashboard` | source |
-| `src/app/login/page.tsx` | Username/password admin login behind `RUSTZEN_ADMIN_ALLOWED_HOSTS` | source |
+| `src/app/login/page.tsx` | Username/password admin login with same-origin Server Action protection | source |
 | `src/app/dashboard/page.tsx` | Dashboard index | source |
 | `src/app/dashboard/licenses/page.tsx` | License and device management | source |
 | `src/app/dashboard/versions/page.tsx` | Release metadata management | source |
@@ -115,7 +115,6 @@ From `.env.example`:
 - `POSTGRES_URL_NON_POOLING`
 - `POSTGRES_URL`
 - `NEXT_PUBLIC_APP_URL`
-- `RUSTZEN_ADMIN_ALLOWED_HOSTS`
 - `RUSTZEN_ADMIN_USERNAME`
 - `RUSTZEN_ADMIN_PASSWORD`
 - `RUSTZEN_ADMIN_SECRET`
