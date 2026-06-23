@@ -20,6 +20,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
+import { publicRuntimeError } from '@/lib/error-message';
 import { prisma } from '@/lib/prisma';
 
 type VersionRow = Prisma.AppVersionGetPayload<{
@@ -77,10 +78,6 @@ function formatDate(value: Date | null | undefined) {
   return value.toISOString().slice(0, 10);
 }
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unknown database error';
-}
-
 async function loadVersionData(): Promise<VersionData> {
   try {
     const [products, versions] = await Promise.all([
@@ -94,7 +91,7 @@ async function loadVersionData(): Promise<VersionData> {
 
     return { products, versions, loadError: null };
   } catch (error) {
-    return { products: [], versions: [], loadError: errorMessage(error) };
+    return { products: [], versions: [], loadError: publicRuntimeError(error) };
   }
 }
 

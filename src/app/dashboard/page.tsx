@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/table';
 import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
+import { publicRuntimeError } from '@/lib/error-message';
 import { prisma } from '@/lib/prisma';
 
 type DashboardProduct = {
@@ -54,10 +55,6 @@ const apiEndpoints = [
   ['GET', '/api/versions?product=rustzen-clear', 'Read release metadata.'],
   ['POST', '/api/webhooks/lemonsqueezy', 'Consume billing webhooks.'],
 ];
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unknown database error';
-}
 
 async function getRequestOrigin() {
   const store = await headers();
@@ -103,7 +100,7 @@ async function loadDashboardData(): Promise<DashboardData> {
       deviceCount: 0,
       versionCount: 0,
       billingEventCount: 0,
-      loadError: errorMessage(error),
+      loadError: publicRuntimeError(error),
     };
   }
 }

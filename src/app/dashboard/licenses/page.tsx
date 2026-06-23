@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
+import { publicRuntimeError } from '@/lib/error-message';
 import { prisma } from '@/lib/prisma';
 
 type LicenseRow = Prisma.LicenseGetPayload<{
@@ -93,10 +94,6 @@ function maskLicenseKey(value: string) {
   return `${value.slice(0, 7)}...${value.slice(-5)}`;
 }
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unknown database error';
-}
-
 function statusVariant(status: string) {
   if (status === 'ACTIVE') return 'success';
   if (status === 'EXPIRED') return 'warning';
@@ -117,7 +114,7 @@ async function loadLicenseData(): Promise<LicenseData> {
 
     return { products, licenses, loadError: null };
   } catch (error) {
-    return { products: [], licenses: [], loadError: errorMessage(error) };
+    return { products: [], licenses: [], loadError: publicRuntimeError(error) };
   }
 }
 
