@@ -88,6 +88,17 @@ export async function createAdminSession(username: string) {
   });
 }
 
+export async function destroyAdminSession() {
+  const store = await cookies();
+  store.set(SESSION_COOKIE, '', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
 export async function hasAdminSession() {
   const store = await cookies();
   const raw = store.get(SESSION_COOKIE)?.value;

@@ -1,7 +1,36 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import type { AppVersion, Prisma, Product } from '@prisma/client';
+import { ExternalLink, Rocket, Upload } from 'lucide-react';
+import { AdminEmptyState, AdminSection, AdminShell, StatCard } from '@/components/admin/admin-shell';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+
+type VersionRow = Prisma.AppVersionGetPayload<{
+  include: { product: true };
+}>;
+
+type VersionData = {
+  products: Product[];
+  versions: VersionRow[];
+  loadError: string | null;
+};
 
 async function publishVersion(formData: FormData) {
   'use server';
@@ -43,68 +72,151 @@ async function publishVersion(formData: FormData) {
   redirect('/dashboard/versions');
 }
 
+function formatDate(value: Date | null | undefined) {
+  if (!value) return '-';
+  return value.toISOString().slice(0, 10);
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown database error';
+}
+
+async function loadVersionData(): Promise<VersionData> {
+  try {
+    const [products, versions] = await Promise.all([
+      prisma.product.findMany({ orderBy: { createdAt: 'asc' } }),
+      prisma.appVersion.findMany({
+        include: { product: true },
+        orderBy: { publishedAt: 'desc' },
+        take: 50,
+      }),
+    ]);
+
+    return { products, versions, loadError: null };
+  } catch (error) {
+    return { products: [], versions: [], loadError: errorMessage(error) };
+  }
+}
+
+function latestVersion(versions: AppVersion[]) {
+  return versions[0]?.version ?? '-';
+}
+
 export default async function VersionsPage() {
   await assertAdminRequestAllowed();
   if (!(await hasAdminSession())) redirect('/login');
 
-  const [products, versions] = await Promise.all([
-    prisma.product.findMany({ orderBy: { createdAt: 'asc' } }),
-    prisma.appVersion.findMany({
-      include: { product: true },
-      orderBy: { publishedAt: 'desc' },
-      take: 50,
-    }),
-  ]);
+  const { products, versions, loadError } = await loadVersionData();
+  const productsWithVersions = new Set(versions.map((item) => item.productId)).size;
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-12">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.25em] text-sky-600">Dashboard</p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-950">Versions</h1>
-          </div>
-          <a className="text-sm font-medium text-sky-700" href="/dashboard">Back to dashboard</a>
+    <AdminShell
+      active="versions"
+      title="Release versions"
+      description="Publish release metadata consumed by RustZen desktop update checks."
+    >
+      <div className="space-y-6">
+        {loadError ? (
+          <Alert className="border-destructive/30 bg-red-50 text-red-900">
+            <AlertTitle>Database read failed</AlertTitle>
+            <AlertDescription className="text-red-800">{loadError}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <StatCard title="Published records" value={versions.length} description="Latest 50 releases" icon={<Rocket className="h-4 w-4" />} />
+          <StatCard title="Products covered" value={`${productsWithVersions}/${products.length}`} description="Products with release metadata" icon={<Rocket className="h-4 w-4" />} />
+          <StatCard title="Latest version" value={latestVersion(versions)} description="Most recently published row" icon={<Upload className="h-4 w-4" />} />
         </div>
 
-        <form action={publishVersion} className="mb-8 grid gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-2">
-          <select name="product" className="rounded-xl border border-gray-300 px-3 py-2 text-sm" required>
-            {products.map((product) => (
-              <option key={product.id} value={product.code}>{product.name}</option>
-            ))}
-          </select>
-          <input name="version" className="rounded-xl border border-gray-300 px-3 py-2 text-sm" placeholder="Version, e.g. 1.0.0" required />
-          <input name="platform" defaultValue="macos" className="rounded-xl border border-gray-300 px-3 py-2 text-sm" placeholder="Platform" />
-          <input name="downloadUrl" className="rounded-xl border border-gray-300 px-3 py-2 text-sm" placeholder="Download URL" />
-          <textarea name="notes" className="rounded-xl border border-gray-300 px-3 py-2 text-sm md:col-span-2" placeholder="Release notes" rows={4} />
-          <button className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">Publish version</button>
-        </form>
+        <AdminSection title="Publish version" description="Create or update release metadata for a product and platform.">
+          <form action={publishVersion} className="grid gap-4 xl:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="product">Product</Label>
+              <Select id="product" name="product" required disabled={products.length === 0}>
+                {products.map((product) => (
+                  <option key={product.id} value={product.code}>
+                    {product.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="version">Version</Label>
+              <Input id="version" name="version" placeholder="1.0.0" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="platform">Platform</Label>
+              <Input id="platform" name="platform" defaultValue="macos" placeholder="macos" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="downloadUrl">Download URL</Label>
+              <Input id="downloadUrl" name="downloadUrl" placeholder="https://..." />
+            </div>
+            <div className="space-y-2 xl:col-span-2">
+              <Label htmlFor="notes">Release notes</Label>
+              <Textarea id="notes" name="notes" placeholder="Fixes, compatibility notes, or rollout details." rows={4} />
+            </div>
+            <div className="xl:col-span-2">
+              <Button type="submit" disabled={products.length === 0}>
+                <Upload className="h-4 w-4" />
+                Publish version
+              </Button>
+              {products.length === 0 ? (
+                <p className="mt-3 text-sm text-destructive">No products available. Seed products before publishing versions.</p>
+              ) : null}
+            </div>
+          </form>
+        </AdminSection>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-100 text-gray-600">
-              <tr>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Version</th>
-                <th className="px-4 py-3">Platform</th>
-                <th className="px-4 py-3">Published</th>
-                <th className="px-4 py-3">Download</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {versions.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-3">{item.product.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{item.version}</td>
-                  <td className="px-4 py-3">{item.platform}</td>
-                  <td className="px-4 py-3">{item.publishedAt.toISOString().slice(0, 10)}</td>
-                  <td className="px-4 py-3">{item.downloadUrl ? <a className="text-sky-700" href={item.downloadUrl}>Open</a> : '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AdminSection title="Version list" description="Release records returned by the update metadata API.">
+          {versions.length === 0 ? (
+            <AdminEmptyState title="No versions found" description="Publish a version to make update metadata available to desktop clients." />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table className="min-w-[940px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Version</TableHead>
+                    <TableHead>Platform</TableHead>
+                    <TableHead>Published</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Download</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {versions.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.product.name}</TableCell>
+                      <TableCell>
+                        <code className="rounded-md bg-muted px-2 py-1 font-mono text-xs">{item.version}</code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{item.platform}</Badge>
+                      </TableCell>
+                      <TableCell>{formatDate(item.publishedAt)}</TableCell>
+                      <TableCell className="max-w-md truncate text-muted-foreground">{item.notes || '-'}</TableCell>
+                      <TableCell className="text-right">
+                        {item.downloadUrl ? (
+                          <Link href={item.downloadUrl} target="_blank">
+                            <Button variant="outline" size="sm" type="button">
+                              <ExternalLink className="h-4 w-4" />
+                              Open
+                            </Button>
+                          </Link>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </AdminSection>
       </div>
-    </main>
+    </AdminShell>
   );
 }

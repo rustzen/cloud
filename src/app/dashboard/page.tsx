@@ -1,17 +1,63 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Activity, ExternalLink, KeyRound, MonitorSmartphone, Package, Rocket } from 'lucide-react';
+import {
+  AdminEmptyState,
+  AdminHealthLine,
+  AdminSection,
+  AdminShell,
+  StatCard,
+} from '@/components/admin/admin-shell';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { hasAdminSession } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-const modules = [
-  { title: 'Products', href: '/dashboard', description: 'Manage RustZen Clear, RustZen Clipboard, and future native macOS clients.' },
-  { title: 'Licenses', href: '/dashboard/licenses', description: 'Create, verify, revoke, and inspect local-client license keys.' },
-  { title: 'Devices', href: '/dashboard/licenses', description: 'Review activated macOS devices and enforce device limits.' },
-  { title: 'Versions', href: '/dashboard/versions', description: 'Publish release metadata consumed by desktop update checks.' },
-  { title: 'Orders', href: '/dashboard/licenses', description: 'Sync payment provider orders without storing private local client data.' },
-  { title: 'License API', href: '/api/licenses/health', description: 'Check local Prisma-backed licensing API health.' },
+type DashboardProduct = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  _count: {
+    licenses: number;
+    versions: number;
+  };
+};
+
+type DashboardData = {
+  products: DashboardProduct[];
+  licenseCount: number;
+  activeLicenseCount: number;
+  deviceCount: number;
+  versionCount: number;
+  billingEventCount: number;
+  loadError: string | null;
+};
+
+const apiEndpoints = [
+  ['POST', '/api/licenses/activate', 'Activate a local client license.'],
+  ['GET', '/api/licenses/verify', 'Verify key and device entitlement.'],
+  ['POST', '/api/licenses/refresh', 'Refresh local license state.'],
+  ['POST', '/api/licenses/deactivate', 'Deactivate a bound device.'],
+  ['GET', '/api/licenses/health', 'Check Prisma-backed license API health.'],
+  ['GET', '/api/versions?product=rustzen-clear', 'Read release metadata.'],
+  ['POST', '/api/webhooks/lemonsqueezy', 'Consume billing webhooks.'],
 ];
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown database error';
+}
 
 async function getRequestOrigin() {
   const store = await headers();
@@ -26,6 +72,42 @@ async function getRequestOrigin() {
   return `${protocol}://${host}`;
 }
 
+async function loadDashboardData(): Promise<DashboardData> {
+  try {
+    const [products, licenseCount, activeLicenseCount, deviceCount, versionCount, billingEventCount] = await Promise.all([
+      prisma.product.findMany({
+        orderBy: { createdAt: 'asc' },
+        include: { _count: { select: { licenses: true, versions: true } } },
+      }),
+      prisma.license.count(),
+      prisma.license.count({ where: { status: 'ACTIVE' } }),
+      prisma.licenseDevice.count(),
+      prisma.appVersion.count(),
+      prisma.billingEvent.count(),
+    ]);
+
+    return {
+      products,
+      licenseCount,
+      activeLicenseCount,
+      deviceCount,
+      versionCount,
+      billingEventCount,
+      loadError: null,
+    };
+  } catch (error) {
+    return {
+      products: [],
+      licenseCount: 0,
+      activeLicenseCount: 0,
+      deviceCount: 0,
+      versionCount: 0,
+      billingEventCount: 0,
+      loadError: errorMessage(error),
+    };
+  }
+}
+
 export default async function DashboardPage() {
   await assertAdminRequestAllowed();
 
@@ -34,61 +116,129 @@ export default async function DashboardPage() {
   }
 
   const origin = await getRequestOrigin();
+  const data = await loadDashboardData();
 
   return (
-    <main className="min-h-screen px-6 py-12">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-10 flex flex-col gap-5">
-          <div className="rz-cloud-logo">
-            <span className="rz-cloud-mark">R</span>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--rz-clipboard)]">
-                RustZen Cloud
-              </p>
-              <h1 className="mt-2 text-4xl font-bold text-[var(--rz-ink)]">
-                Client control plane
-              </h1>
+    <AdminShell
+      active="overview"
+      title="Operations overview"
+      description="Monitor RustZen products, license coverage, device bindings, release metadata, and cloud API entrypoints."
+    >
+      <div className="space-y-6">
+        {data.loadError ? (
+          <Alert className="border-destructive/30 bg-red-50 text-red-900">
+            <AlertTitle>Database read failed</AlertTitle>
+            <AlertDescription className="text-red-800">{data.loadError}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            title="Licenses"
+            value={data.licenseCount}
+            description={`${data.activeLicenseCount} active keys`}
+            icon={<KeyRound className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Devices"
+            value={data.deviceCount}
+            description="Bound macOS clients"
+            icon={<MonitorSmartphone className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Versions"
+            value={data.versionCount}
+            description="Published update records"
+            icon={<Rocket className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Billing events"
+            value={data.billingEventCount}
+            description="Webhook events retained"
+            icon={<Activity className="h-4 w-4" />}
+          />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+          <AdminSection
+            title="Products"
+            description="Configured RustZen clients and their operational coverage."
+          >
+            {data.products.length === 0 ? (
+              <AdminEmptyState
+                title="No products available"
+                description="Seed or create products before issuing licenses and release metadata."
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table className="min-w-[720px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Licenses</TableHead>
+                      <TableHead>Versions</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="font-medium">{product.name}</div>
+                          <div className="mt-1 max-w-md truncate text-xs text-muted-foreground">
+                            {product.description ?? 'No description configured.'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <code className="rounded-md bg-muted px-2 py-1 text-xs">{product.code}</code>
+                        </TableCell>
+                        <TableCell>{product._count.licenses}</TableCell>
+                        <TableCell>{product._count.versions}</TableCell>
+                        <TableCell className="text-right">
+                          <Link href="/dashboard/licenses">
+                            <Button variant="outline" size="sm" type="button">
+                              <KeyRound className="h-4 w-4" />
+                              Manage
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </AdminSection>
+
+          <AdminSection title="Runtime" description="Current request origin and public service routes.">
+            <div className="space-y-3">
+              <AdminHealthLine label="API base URL" value={origin} />
+              <Link href="/api/licenses/health" target="_blank">
+                <Button variant="outline" className="w-full justify-between" type="button">
+                  Check license API health
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
-          </div>
-          <p className="max-w-3xl text-base leading-7 text-[var(--rz-muted)]">
-            Manage licensing, activated devices, release metadata, and API health for the
-            native RustZen Clear and RustZen Clipboard macOS clients. Local cleanup data and
-            clipboard history stay on the user&apos;s Mac.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <span className="rz-cloud-pill">Licensing</span>
-            <span className="rz-cloud-pill">Versions</span>
-            <span className="rz-cloud-pill">Device limits</span>
-            <span className="rz-cloud-pill">No local data runtime</span>
-          </div>
+          </AdminSection>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module) => (
-            <Link key={module.title} href={module.href} className="rz-cloud-panel p-6 transition hover:border-[var(--rz-clipboard)]">
-              <h2 className="text-xl font-semibold text-[var(--rz-ink)]">{module.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-[var(--rz-muted)]">{module.description}</p>
-            </Link>
-          ))}
-        </div>
-
-        <div className="rz-cloud-panel mt-10 p-6">
-          <h2 className="text-xl font-semibold text-[var(--rz-ink)]">API endpoints</h2>
-          <div className="mt-4 rounded-lg border border-[var(--rz-border)] bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--rz-muted)]">API base URL</p>
-            <code className="mt-2 block break-all text-sm font-semibold text-[var(--rz-ink)]">{origin}</code>
+        <AdminSection title="API surface" description="Endpoints consumed by desktop clients and billing providers.">
+          <div className="grid gap-2">
+            {apiEndpoints.map(([method, path, description]) => (
+              <div
+                key={`${method}-${path}`}
+                className="grid gap-3 rounded-md border border-border px-3 py-3 text-sm md:grid-cols-[84px_minmax(0,1fr)_1.2fr]"
+              >
+                <Badge variant={method === 'GET' ? 'secondary' : 'outline'}>{method}</Badge>
+                <code className="min-w-0 truncate font-mono text-xs text-foreground">{path}</code>
+                <span className="text-muted-foreground">{description}</span>
+              </div>
+            ))}
           </div>
-          <div className="mt-4 grid gap-2 text-sm text-[var(--rz-muted)] md:grid-cols-2">
-            <code>POST /api/licenses/activate</code>
-            <code>GET /api/licenses/verify</code>
-            <code>POST /api/licenses/refresh</code>
-            <code>POST /api/licenses/deactivate</code>
-            <code>GET /api/licenses/health</code>
-            <code>GET /api/versions?product=rustzen-clear</code>
-            <code>POST /api/webhooks/lemonsqueezy</code>
-          </div>
-        </div>
+        </AdminSection>
       </div>
-    </main>
+    </AdminShell>
   );
 }

@@ -1,4 +1,11 @@
 import { redirect } from 'next/navigation';
+import { KeyRound, LogIn, ShieldCheck } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { assertAdminRequestAllowed } from '@/lib/admin-security';
 import { createAdminSession, hasAdminSession, verifyAdminCredentials } from '@/lib/auth';
 
@@ -28,97 +35,90 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[var(--rz-page)] px-5 py-6 text-[var(--rz-ink)] sm:px-8 lg:px-10">
-      <div className="mx-auto grid min-h-[calc(100vh-48px)] max-w-6xl overflow-hidden rounded-lg border border-[var(--rz-border)] bg-white shadow-[0_24px_80px_rgba(32,36,43,0.10)] lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="flex min-h-[280px] flex-col justify-between bg-[#111820] p-8 text-white sm:p-10 lg:p-12">
-          <div className="rz-cloud-logo">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white text-sm font-bold text-[#111820]">
+    <main className="grid min-h-screen bg-background text-foreground lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="hidden min-h-screen flex-col justify-between bg-sidebar p-8 text-sidebar-foreground lg:flex xl:p-10">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground">
+            R
+          </span>
+          <div>
+            <p className="text-sm font-semibold">RustZen Cloud</p>
+            <p className="text-xs text-sidebar-foreground/58">Admin control plane</p>
+          </div>
+        </div>
+
+        <div className="max-w-lg">
+          <Badge className="border-sidebar-border bg-sidebar-accent text-sidebar-foreground" variant="outline">
+            Production admin
+          </Badge>
+          <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-normal">
+            Licensing, devices, and releases in one operations surface.
+          </h1>
+          <p className="mt-5 text-sm leading-6 text-sidebar-foreground/64">
+            Sign in to manage RustZen desktop product metadata while client private data remains local.
+          </p>
+        </div>
+
+        <div className="grid gap-3 text-sm">
+          <div className="flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/45 p-4">
+            <KeyRound className="h-4 w-4" />
+            License activation and revocation
+          </div>
+          <div className="flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/45 p-4">
+            <ShieldCheck className="h-4 w-4" />
+            Admin session protected dashboard
+          </div>
+        </div>
+      </section>
+
+      <section className="flex min-h-screen items-center justify-center px-5 py-8">
+        <div className="w-full max-w-md">
+          <div className="mb-6 flex items-center gap-3 lg:hidden">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
               R
             </span>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8fd8d2]">RustZen Cloud</p>
-              <p className="mt-1 text-sm text-white/62">Admin control plane</p>
+              <p className="text-sm font-semibold">RustZen Cloud</p>
+              <p className="text-xs text-muted-foreground">Admin control plane</p>
             </div>
           </div>
 
-          <div>
-            <h1 className="max-w-sm text-4xl font-semibold leading-[1.05] tracking-normal sm:text-5xl">
-              License and release operations.
-            </h1>
-            <p className="mt-5 max-w-md text-sm leading-6 text-white/68">
-              Manage products, licenses, device limits, and release metadata for RustZen desktop clients.
-            </p>
-          </div>
-
-          <dl className="grid gap-4 border-t border-white/10 pt-6 text-sm sm:grid-cols-3 lg:grid-cols-1">
-            <div>
-              <dt className="font-medium text-white">Licenses</dt>
-              <dd className="mt-1 text-white/58">Activation, revocation, and device binding.</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-white">Versions</dt>
-              <dd className="mt-1 text-white/58">Release metadata for update checks.</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-white">API</dt>
-              <dd className="mt-1 text-white/58">Token-protected operational endpoints.</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className="flex items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
-          <form action={login} className="w-full max-w-md">
-            <div className="mb-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--rz-clipboard)]">
-                Secure access
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-normal text-[var(--rz-ink)]">
-                Sign in
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[var(--rz-muted)]">
+          <Card>
+            <CardHeader>
+              <Badge className="w-fit" variant="secondary">Secure access</Badge>
+              <CardTitle className="mt-3 text-2xl">Admin sign in</CardTitle>
+              <CardDescription>
                 Use the configured admin credentials for this deployment.
-              </p>
-            </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {params.error ? (
+                <Alert className="mb-5 border-destructive/30 bg-red-50 text-red-900">
+                  <AlertTitle>Sign in failed</AlertTitle>
+                  <AlertDescription className="text-red-800">Invalid username or password.</AlertDescription>
+                </Alert>
+              ) : null}
 
-            {params.error ? (
-              <p className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                Invalid username or password.
-              </p>
-            ) : null}
+              <form action={login} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" name="username" type="text" autoComplete="username" required />
+                </div>
 
-            <label className="block text-sm font-medium text-[var(--rz-ink)]" htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              autoComplete="username"
-              className="mt-2 h-12 w-full rounded-md border border-[var(--rz-border)] bg-white px-4 text-base text-[var(--rz-ink)] outline-none transition focus:border-[var(--rz-clipboard)] focus:ring-4 focus:ring-[#087f78]/12"
-              required
-            />
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" name="password" type="password" autoComplete="current-password" required />
+                </div>
 
-            <label className="mt-5 block text-sm font-medium text-[var(--rz-ink)]" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              className="mt-2 h-12 w-full rounded-md border border-[var(--rz-border)] bg-white px-4 text-base text-[var(--rz-ink)] outline-none transition focus:border-[var(--rz-clipboard)] focus:ring-4 focus:ring-[#087f78]/12"
-              required
-            />
-
-            <button
-              className="mt-7 h-12 w-full rounded-md bg-[var(--rz-ink)] px-4 text-sm font-semibold text-white transition hover:bg-[#111820] focus:outline-none focus:ring-4 focus:ring-[#20242b]/16"
-              type="submit"
-            >
-              Sign in
-            </button>
-          </form>
-        </section>
-      </div>
+                <Button className="w-full" size="lg" type="submit">
+                  <LogIn className="h-4 w-4" />
+                  Sign in
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </main>
   );
 }
