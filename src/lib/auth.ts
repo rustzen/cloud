@@ -107,7 +107,13 @@ export async function hasAdminSession() {
   const [value, signature] = raw.split('.');
   if (!value || !signature) return false;
 
-  const expected = signAdminSession(value);
+  let expected: string;
+  try {
+    expected = signAdminSession(value);
+  } catch {
+    return false;
+  }
+
   const actualBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
 
