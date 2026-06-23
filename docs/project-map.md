@@ -25,7 +25,7 @@ Command evidence:
 | --- | --- | --- |
 | Web framework | `package.json`, `src/app` | source |
 | Runtime | Next.js App Router, React, TypeScript | source |
-| Styling | Tailwind CSS plus `src/app/globals.css` | source |
+| Styling | Tailwind CSS via `postcss.config.mjs` plus `src/app/globals.css` | source |
 | Database | Prisma + PostgreSQL | source; local test DB verified |
 | Analytics | `@vercel/analytics` in `src/app/layout.tsx` | source |
 | Hosting target | Vercel project link in `.vercel/project.json` | local link verified; env not configured |
@@ -55,6 +55,7 @@ Commands below come from `package.json`.
 | `.env.example` | Env-name reference | source |
 | `.gitignore` | Ignores dependencies, env, build output, `.vercel/` | source |
 | `package.json` | Next.js, Prisma, ESLint scripts and dependencies | source |
+| `postcss.config.mjs` | Tailwind CSS v4 PostCSS integration | source |
 | `scripts/with-env.mjs` | Loads `.env.local`/`.env` before Prisma CLI commands | source |
 | `scripts/verify-db.mjs` | Verifies database connection and table counts | source |
 | `prisma/schema.prisma` | Product/license/device/version/billing schema | source |

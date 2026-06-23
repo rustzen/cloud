@@ -18,7 +18,7 @@ As of the local validation pass on 2026-06-15:
 - source intended for commit: `README.md`, `.env.example`, `.gitignore`,
   `AGENTS.md`, `docs/`, `package.json`, `pnpm-lock.yaml`,
   `pnpm-workspace.yaml`, `prisma/`, `scripts/`, `src/`, `tsconfig.json`,
-  `eslint.config.mjs`, `next-env.d.ts`
+  `eslint.config.mjs`, `postcss.config.mjs`, `next-env.d.ts`
 - ignored/local-only: `.next/`, `.vercel/`, `node_modules/`
 - ignored/local secret/runtime env: `.env.local`, `.env`, `.env.*.local`
 
@@ -43,6 +43,7 @@ truth. They are local runtime/dependency/deploy-link artifacts.
 | --- | --- | --- |
 | `README.md` | source | Project overview |
 | `package.json` | source | Next.js, Prisma, lint, build, dev scripts |
+| `postcss.config.mjs` | source | Tailwind CSS v4 PostCSS integration |
 | `.env.example` | source | Required environment names |
 | `prisma/schema.prisma` | source | Product, license, device, version, billing models |
 | `prisma/seed.mjs` | source | Initial RustZen product records |
