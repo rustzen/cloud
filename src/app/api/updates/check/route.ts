@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-const DEFAULT_RUSTZEN_CLEAR_MANIFEST_URL =
-  'https://github.com/rustzen/rustzen-clear/releases/latest/download/zen-clear-updates.json';
-
 function manifestUrl() {
-  return process.env.RUSTZEN_CLEAR_UPDATE_MANIFEST_URL || DEFAULT_RUSTZEN_CLEAR_MANIFEST_URL;
+  return process.env.RUSTZEN_CLEAR_UPDATE_MANIFEST_URL?.trim() || '';
 }
 
 export async function GET(_request: NextRequest) {
-  const response = await fetch(manifestUrl(), {
+  const url = manifestUrl();
+  if (!url) {
+    return NextResponse.json({ error: 'update_manifest_not_configured' }, { status: 503 });
+  }
+
+  const response = await fetch(url, {
     headers: { accept: 'application/json' },
     cache: 'no-store',
   });
