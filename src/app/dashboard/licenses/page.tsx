@@ -1,14 +1,12 @@
 import { redirect } from 'next/navigation';
 import { randomUUID } from 'crypto';
 import type { Prisma, Product } from '@prisma/client';
-import { Ban, KeyRound, MonitorSmartphone, Plus, Unlink } from 'lucide-react';
+import { Ban, KeyRound, MonitorSmartphone, Unlink } from 'lucide-react';
+import { LicenseCreateDialog } from '@/components/admin/license-create-dialog';
 import { AdminSection, AdminShell, StatCard } from '@/components/admin/admin-shell';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -163,41 +161,12 @@ export default async function LicensesPage() {
           <StatCard title="Capacity" value={`${devices.length}/${totalCapacity}`} description="Bound devices vs total limit" icon={<MonitorSmartphone className="h-4 w-4" />} />
         </div>
 
-        <AdminSection title="Create license" description="Issue a manual key for an existing product.">
-          <form action={createLicense} className="grid gap-4 xl:grid-cols-[1.2fr_0.75fr_0.75fr_1fr_auto]">
-            <div className="space-y-2">
-              <Label htmlFor="product">Product</Label>
-              <Select id="product" name="product" required disabled={products.length === 0}>
-                {products.map((product) => (
-                  <option key={product.id} value={product.code}>
-                    {product.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan">Plan</Label>
-              <Input id="plan" name="plan" defaultValue="pro" placeholder="pro" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="maxDevices">Max devices</Label>
-              <Input id="maxDevices" name="maxDevices" defaultValue="3" type="number" min="1" placeholder="3" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expiresAt">Expires</Label>
-              <Input id="expiresAt" name="expiresAt" type="datetime-local" />
-            </div>
-            <div className="flex items-end">
-              <Button className="w-full" type="submit" disabled={products.length === 0}>
-                <Plus className="h-4 w-4" />
-                Create
-              </Button>
-            </div>
-          </form>
-          {products.length === 0 ? (
-            <p className="mt-3 text-sm text-destructive">No products available. Seed products before creating licenses.</p>
-          ) : null}
-        </AdminSection>
+        <div className="flex items-center justify-end">
+          <LicenseCreateDialog
+            products={products.map((product) => ({ code: product.code, name: product.name }))}
+            createLicense={createLicense}
+          />
+        </div>
 
         <AdminSection title="License list" description="All license records with key, customer, order, product, device usage, and status.">
           <div className="overflow-x-auto">
