@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { randomUUID } from 'crypto';
 import type { Prisma, Product } from '@prisma/client';
 import { Ban, KeyRound, MonitorSmartphone, Plus, Unlink } from 'lucide-react';
-import { AdminEmptyState, AdminSection, AdminShell, StatCard } from '@/components/admin/admin-shell';
+import { AdminSection, AdminShell, StatCard } from '@/components/admin/admin-shell';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,9 +89,9 @@ function formatDate(value: Date | null | undefined) {
   return value.toISOString().slice(0, 10);
 }
 
-function maskLicenseKey(value: string) {
-  if (value.length <= 12) return value;
-  return `${value.slice(0, 7)}...${value.slice(-5)}`;
+function formatDateTime(value: Date | null | undefined) {
+  if (!value) return '-';
+  return value.toISOString().replace('T', ' ').slice(0, 16);
 }
 
 function statusVariant(status: string) {
@@ -108,7 +108,6 @@ async function loadLicenseData(): Promise<LicenseData> {
       prisma.license.findMany({
         orderBy: { createdAt: 'desc' },
         include: { product: true, devices: { orderBy: { lastSeenAt: 'desc' } } },
-        take: 100,
       }),
     ]);
 
@@ -158,7 +157,7 @@ export default async function LicensesPage() {
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Licenses" value={licenses.length} description="Latest 100 records" icon={<KeyRound className="h-4 w-4" />} />
+          <StatCard title="Licenses" value={licenses.length} description="All stored records" icon={<KeyRound className="h-4 w-4" />} />
           <StatCard title="Active" value={activeLicenses} description="Keys allowed to activate" icon={<KeyRound className="h-4 w-4" />} />
           <StatCard title="Devices" value={devices.length} description="Currently bound clients" icon={<MonitorSmartphone className="h-4 w-4" />} />
           <StatCard title="Capacity" value={`${devices.length}/${totalCapacity}`} description="Bound devices vs total limit" icon={<MonitorSmartphone className="h-4 w-4" />} />
@@ -200,40 +199,52 @@ export default async function LicensesPage() {
           ) : null}
         </AdminSection>
 
-        <AdminSection title="License list" description="Keys, product ownership, device usage, and revocation state.">
-          {licenses.length === 0 ? (
-            <AdminEmptyState title="No licenses found" description="Create a license or sync billing orders to populate this table." />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table className="min-w-[980px]">
-                <TableHeader>
+        <AdminSection title="License list" description="All license records with key, customer, order, product, device usage, and status.">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[1360px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>License key</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Provider</TableHead>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Devices</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {licenses.length === 0 ? (
                   <TableRow>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Devices</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableCell className="py-8 text-center text-muted-foreground" colSpan={11}>
+                      No licenses found. Create a license or sync billing orders to populate this table.
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {licenses.map((license) => (
+                ) : (
+                  licenses.map((license) => (
                     <TableRow key={license.id}>
                       <TableCell>
-                        <code className="font-mono text-xs" title={license.licenseKey}>
-                          {maskLicenseKey(license.licenseKey)}
-                        </code>
+                        <code className="block max-w-[280px] break-all font-mono text-xs">{license.licenseKey}</code>
                       </TableCell>
                       <TableCell>{license.product.name}</TableCell>
                       <TableCell>{license.plan}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariant(license.status)}>{license.status}</Badge>
                       </TableCell>
+                      <TableCell>{license.customerEmail ?? '-'}</TableCell>
+                      <TableCell>{license.provider ?? '-'}</TableCell>
+                      <TableCell>
+                        <code className="block max-w-[180px] truncate font-mono text-xs" title={license.providerOrderId ?? undefined}>
+                          {license.providerOrderId ?? '-'}
+                        </code>
+                      </TableCell>
                       <TableCell>{license.devices.length}/{license.maxDevices}</TableCell>
                       <TableCell>{formatDate(license.expiresAt)}</TableCell>
-                      <TableCell>{formatDate(license.createdAt)}</TableCell>
+                      <TableCell>{formatDateTime(license.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         {license.status !== 'REVOKED' ? (
                           <form action={revokeLicense}>
@@ -248,47 +259,55 @@ export default async function LicensesPage() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </AdminSection>
 
-        <AdminSection title="Device list" description="Activated clients currently bound to license keys.">
-          {devices.length === 0 ? (
-            <AdminEmptyState title="No activated devices found" description="Device rows appear after desktop clients activate a license." />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table className="min-w-[1080px]">
-                <TableHeader>
+        <AdminSection title="Device list" description="All activated clients currently bound to license keys.">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[1280px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Device</TableHead>
+                  <TableHead>Device ID</TableHead>
+                  <TableHead>License key</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Usage</TableHead>
+                  <TableHead>App</TableHead>
+                  <TableHead>Activated</TableHead>
+                  <TableHead>Last seen</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {devices.length === 0 ? (
                   <TableRow>
-                    <TableHead>Device</TableHead>
-                    <TableHead>Device ID</TableHead>
-                    <TableHead>License</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>App</TableHead>
-                    <TableHead>Activated</TableHead>
-                    <TableHead>Last seen</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableCell className="py-8 text-center text-muted-foreground" colSpan={10}>
+                      No activated devices found. Device rows appear after desktop clients activate a license.
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {devices.map((device) => (
+                ) : (
+                  devices.map((device) => (
                     <TableRow key={device.id}>
                       <TableCell>{device.deviceName || '-'}</TableCell>
                       <TableCell>
-                        <code className="font-mono text-xs">{device.deviceId}</code>
+                        <code className="block max-w-[240px] break-all font-mono text-xs">{device.deviceId}</code>
                       </TableCell>
                       <TableCell>
-                        <code className="font-mono text-xs" title={device.licenseKey}>
-                          {maskLicenseKey(device.licenseKey)}
-                        </code>
+                        <code className="block max-w-[260px] break-all font-mono text-xs">{device.licenseKey}</code>
                       </TableCell>
                       <TableCell>{device.productName}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusVariant(device.licenseStatus)}>{device.licenseStatus}</Badge>
+                      </TableCell>
+                      <TableCell>{device.boundDevices}/{device.maxDevices}</TableCell>
                       <TableCell>{device.appVersion || '-'}</TableCell>
-                      <TableCell>{formatDate(device.activatedAt)}</TableCell>
-                      <TableCell>{formatDate(device.lastSeenAt)}</TableCell>
+                      <TableCell>{formatDateTime(device.activatedAt)}</TableCell>
+                      <TableCell>{formatDateTime(device.lastSeenAt)}</TableCell>
                       <TableCell className="text-right">
                         <form action={unbindDevice}>
                           <input type="hidden" name="deviceId" value={device.id} />
@@ -299,11 +318,11 @@ export default async function LicensesPage() {
                         </form>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </AdminSection>
       </div>
     </AdminShell>
