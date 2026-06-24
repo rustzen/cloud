@@ -7,10 +7,8 @@ import {
   LayoutDashboard,
   LogOut,
   Rocket,
-  Server,
   ShieldCheck,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { destroyAdminSession } from '@/lib/auth';
@@ -22,7 +20,6 @@ type AdminShellProps = {
   active: AdminNavKey;
   title: string;
   description: string;
-  badge?: string;
   children: React.ReactNode;
 };
 
@@ -70,11 +67,11 @@ async function logout() {
   redirect('/login');
 }
 
-export function AdminShell({ active, title, description, badge = 'Production admin', children }: AdminShellProps) {
+export function AdminShell({ active, title, description, children }: AdminShellProps) {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="hidden border-r border-border bg-sidebar text-sidebar-foreground lg:block">
+        <aside className="hidden border-r border-border bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:block lg:h-screen lg:self-start">
           <div className="flex h-full flex-col">
             <div className="border-b border-sidebar-border px-6 py-5">
               <Link className="flex items-center gap-3" href="/dashboard">
@@ -140,24 +137,18 @@ export function AdminShell({ active, title, description, badge = 'Production adm
 
         <section className="min-w-0">
           <header className="sticky top-0 z-10 border-b border-border bg-background/94 backdrop-blur">
-            <div className="flex min-h-16 flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+            <div className="flex min-h-14 items-center justify-between gap-4 px-5 py-3 lg:px-8">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">{badge}</Badge>
-                  <Badge variant="secondary">Next.js API</Badge>
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1 className="truncate text-xl font-semibold tracking-normal">{title}</h1>
                 </div>
-                <h1 className="mt-3 text-2xl font-semibold tracking-normal sm:text-3xl">{title}</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
+                <p className="mt-0.5 hidden max-w-4xl truncate text-xs text-muted-foreground xl:block">{description}</p>
               </div>
-              <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
-                <span className="hidden items-center gap-2 sm:inline-flex">
-                  <Server className="h-4 w-4" />
-                  rustzen-cloud.vercel.app
-                </span>
+              <div className="flex shrink-0 items-center justify-end gap-2 text-xs text-muted-foreground">
                 <form action={logout}>
                   <Button variant="outline" size="sm" type="submit">
-                    <LogOut className="h-4 w-4" />
-                    Sign out
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Sign out</span>
                   </Button>
                 </form>
               </div>
