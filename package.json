@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/with-env.mjs prisma generate && next build",
+    "build": "node scripts/with-env.mjs prisma generate && node scripts/clear-license-data-on-build.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
     "db:generate": "node scripts/with-env.mjs prisma generate",
