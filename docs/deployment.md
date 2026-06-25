@@ -1,11 +1,11 @@
-# rustzen-cloud Deployment Notes
+# cloud Deployment Notes
 
 Status: current deployment notes
-Date: 2026-06-16
+Date: 2026-06-25
 
 ## Deployment Classification
 
-`rustzen-cloud` is a Peripheral Vercel project: Next.js App Router + Prisma +
+`cloud` is a Peripheral Vercel project: Next.js App Router + Prisma +
 PostgreSQL. Local validation used Homebrew PostgreSQL 17 and a local
 `rustzen_cloud_test` database.
 
@@ -13,14 +13,14 @@ PostgreSQL. Local validation used Homebrew PostgreSQL 17 and a local
 
 | Item | Current evidence | Status |
 | --- | --- | --- |
-| Project/team | `.vercel/project.json` points to project `rustzen-cloud` under `abin-projects` | local link verified |
-| Domain | Not found in committed files | not verified |
+| Project/team | `.vercel/project.json` points to project `cloud` under `abin-projects` | local link verified |
+| Domain | `cloud.rustzen.dev` on Vercel project `cloud` | production verified |
 | Framework | Next.js from `package.json` and `src/app` | source |
 | Build command | `pnpm build` -> `node scripts/with-env.mjs prisma generate && next build` | verified locally |
 | Output directory | Next.js managed output | local build verified; Vercel output not verified |
 | Package manager | `pnpm-lock.yaml`, `pnpm-workspace.yaml` | source |
 | Env source | `.env.example` names | source |
-| Vercel env | `pnpm dlx vercel env ls` | no variables configured |
+| Vercel env | Vercel project settings | not reverified in this pass |
 | Runtime limits | Not found | not verified |
 | `vercel.json` | Not found | not verified |
 | `next.config.*` | Not found | not verified |
@@ -38,13 +38,18 @@ From `.env.example`:
 | --- | --- | --- |
 | Database | `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` | Prisma connectivity and migration target |
 | Database platform reserve | `POSTGRES_URL` | Vercel/Postgres compatibility value; current Prisma datasource does not read it |
-| Public URL reserve | `NEXT_PUBLIC_APP_URL` | Reserved for future callback/link consistency; current source does not read it |
+| Public URLs | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL` | `NEXT_PUBLIC_APP_URL` should point at `https://cloud.rustzen.dev`; `NEXT_PUBLIC_SITE_URL` should point at `https://app.rustzen.dev` for public checkout return links |
 | Admin auth | `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_API_TOKEN` | Dashboard credential handling, session signing, and operational API access |
 | License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `CREEM_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; webhook secrets verify provider HMAC signatures |
 | Creem checkout | `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, `CREEM_CHECKOUT_SUCCESS_URL` | Rustzen Clear Pro checkout and subscription fulfillment; current product id is `prod_4Wa3YyJe3bn8hNuotPlSYj` |
+| Zen Clear updater | `RUSTZEN_CLEAR_UPDATE_MANIFEST_URL`, `RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN` | Manifest source and optional Blob origin allow-list for rewriting update asset URLs through `/api/updates/download` |
 | Legacy license proxy | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Optional external license-server compatibility path, not the default desktop-client API |
 
-Preview and production Vercel values are not configured as of 2026-06-15.
+The production domains are `https://cloud.rustzen.dev` for the dashboard/API
+and `https://app.rustzen.dev` for the public site. The latest verified
+production deployment is `dpl_EfgfPjCAnkU4uDqTkRHS1ghUgoTh`, created from
+GitHub `rustzen/cloud` commit `4f8c0d1` after the repository was made public.
+Preview and production Vercel env values require live dashboard verification.
 Rustzen Clear Pro is a Creem annual subscription at USD $10/year. Creem webhook
 events must identify the Rustzen product through metadata or the configured
 product id; webhook ingestion records events without creating a license when the
@@ -79,7 +84,7 @@ Verified on 2026-06-15:
 
 Before any deploy:
 
-1. Run `git status --short --branch` in `rustzen-cloud`.
+1. Run `git status --short --branch` in `cloud`.
 2. Confirm current `package.json` scripts and package manager.
 3. Configure required Vercel preview/prod env values; do not commit secrets.
 4. Decide Prisma migration strategy before touching a real database.
@@ -103,9 +108,12 @@ testing require explicit user approval.
 - Committed CI workflow
 - Committed Prisma migration files
 
+## Verified
+
+- Vercel domain: `cloud.rustzen.dev` verified on 2026-06-25.
+
 ## Not Verified
 
-- Vercel domain.
 - Vercel preview/prod environment values; current Vercel project has no env vars.
 - Production PostgreSQL database availability.
 - Production Prisma migration state.

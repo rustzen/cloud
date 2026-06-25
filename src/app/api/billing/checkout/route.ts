@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   buildCreemCheckoutRequest,
   getCreemApiBaseUrl,
-  RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
   type CreemCheckoutProductCode,
 } from '@/lib/creem';
 
@@ -14,7 +13,7 @@ type CreemCheckoutResponse = {
 };
 
 const productIds: Record<CreemCheckoutProductCode, string | undefined> = {
-  'rustzen-clear': process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID || RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
+  'rustzen-clear': process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID,
 };
 
 function readProductCode(request: NextRequest) {

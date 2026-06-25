@@ -4,15 +4,6 @@ type JsonObject = Record<string, unknown>;
 
 export type CreemCheckoutProductCode = 'rustzen-clear';
 
-export const RUSTZEN_CLEAR_CREEM_PRODUCT_ID = 'prod_4Wa3YyJe3bn8hNuotPlSYj';
-export const RUSTZEN_CLEAR_CREEM_PRODUCT = {
-  productId: RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
-  priceCents: 1000,
-  currency: 'USD',
-  billingType: 'recurring',
-  billingPeriod: 'every-year',
-} as const;
-
 export type CreemCheckoutRequest = {
   product_id: string;
   request_id: string;

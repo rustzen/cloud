@@ -7,9 +7,10 @@ import {
   getCreemApiBaseUrl,
   normalizeCreemLicense,
   normalizeCreemWebhook,
-  RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
   verifyCreemSignature,
 } from './creem.ts';
+
+const TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID = 'prod_test_clear';
 
 test('selects Creem sandbox API for test keys', () => {
   assert.equal(getCreemApiBaseUrl({ apiKey: 'creem_test_abc' }), 'https://test-api.creem.io');
@@ -19,14 +20,14 @@ test('builds a checkout request for the Rustzen Clear Creem product', () => {
   const request = buildCreemCheckoutRequest({
     productCode: 'rustzen-clear',
     requestId: 'rz_checkout_123',
-    successUrl: 'https://rustzen.com/checkout/success',
-    productIds: { 'rustzen-clear': RUSTZEN_CLEAR_CREEM_PRODUCT_ID },
+    successUrl: 'https://app.rustzen.dev/checkout/success',
+    productIds: { 'rustzen-clear': TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID },
   });
 
   assert.deepEqual(request, {
-    product_id: RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
+    product_id: TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
     request_id: 'rz_checkout_123',
-    success_url: 'https://rustzen.com/checkout/success',
+    success_url: 'https://app.rustzen.dev/checkout/success',
     metadata: {
       product: 'rustzen-clear',
       source: 'rustzen-cloud',
@@ -43,7 +44,7 @@ test('normalizes a checkout.completed webhook into license fulfillment data', ()
       order: { id: 'ord_test' },
       subscription: { id: 'sub_test' },
       customer: { email: 'buyer@example.com' },
-      product: { id: RUSTZEN_CLEAR_CREEM_PRODUCT_ID },
+      product: { id: TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID },
       metadata: { product: 'rustzen-clear' },
     },
   };
@@ -55,7 +56,7 @@ test('normalizes a checkout.completed webhook into license fulfillment data', ()
     orderId: 'ord_test',
     subscriptionId: 'sub_test',
     customerEmail: 'buyer@example.com',
-    productId: RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
+    productId: TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
     productCode: 'rustzen-clear',
     licenseKey: null,
     currentPeriodEndDate: null,
@@ -70,7 +71,7 @@ test('normalizes subscription paid webhooks with period end dates', () => {
       object: {
         id: 'sub_test',
         object: 'subscription',
-        product: { id: RUSTZEN_CLEAR_CREEM_PRODUCT_ID },
+        product: { id: TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID },
         customer: { email: 'buyer@example.com' },
         current_period_end_date: '2027-01-01T00:00:00.000Z',
       },
@@ -79,7 +80,7 @@ test('normalizes subscription paid webhooks with period end dates', () => {
   );
 
   assert.equal(license.subscriptionId, 'sub_test');
-  assert.equal(license.productId, RUSTZEN_CLEAR_CREEM_PRODUCT_ID);
+  assert.equal(license.productId, TEST_RUSTZEN_CLEAR_CREEM_PRODUCT_ID);
   assert.equal(license.currentPeriodEndDate?.toISOString(), '2027-01-01T00:00:00.000Z');
 });
 

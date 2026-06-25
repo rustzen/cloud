@@ -1,19 +1,20 @@
-# rustzen-cloud Project Map
+# cloud Project Map
 
 Status: current project map
-Date: 2026-06-16
+Date: 2026-06-25
 Project type: Peripheral RustZen Cloud
 
 ## Current Facts
 
 Command evidence:
 
-- `git -C rustzen-cloud status --short --branch`: branch
-  `main...origin/main [ahead 1]` on 2026-06-16.
-- `git -C rustzen-cloud status --ignored --short`: `.env.local`, `.next/`,
+- `git -C cloud status --short --branch`: branch `main` with active local
+  modified/untracked work on 2026-06-25.
+- `git -C cloud status --ignored --short`: `.env.local`, `.next/`,
   `.vercel/`, and `node_modules/` are ignored/local-only.
-- `pnpm dlx vercel env ls`: project `abin-projects/rustzen-cloud` has no
-  configured Vercel environment variables.
+- Vercel project `abin-projects/cloud` latest production deployment
+  `dpl_EfgfPjCAnkU4uDqTkRHS1ghUgoTh` is READY from GitHub repo
+  `rustzen/cloud` commit `4f8c0d1`.
 - `pg_isready -h 127.0.0.1 -p 5432`: local Homebrew PostgreSQL accepts
   connections.
 - `psql -h 127.0.0.1 -p 5432 -d rustzen_cloud_test`: local test database is
@@ -28,7 +29,7 @@ Command evidence:
 | Styling | Tailwind CSS via `postcss.config.mjs` plus `src/app/globals.css` | source |
 | Database | Prisma + PostgreSQL | source; local test DB verified |
 | Analytics | `@vercel/analytics` in `src/app/layout.tsx` | source |
-| Hosting target | Vercel project link in `.vercel/project.json` | local link verified; env not configured |
+| Hosting target | Vercel project `abin-projects/cloud`; production domain `cloud.rustzen.dev` | deployment verified on 2026-06-25 |
 
 ## Package Manager And Commands
 
@@ -116,6 +117,7 @@ From `.env.example`:
 - `POSTGRES_URL_NON_POOLING`
 - `POSTGRES_URL`
 - `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_SITE_URL`
 - `RUSTZEN_ADMIN_USERNAME`
 - `RUSTZEN_ADMIN_PASSWORD`
 - `RUSTZEN_ADMIN_SECRET`
@@ -128,13 +130,16 @@ From `.env.example`:
 - `CREEM_WEBHOOK_SECRET`
 - `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`
 - `CREEM_CHECKOUT_SUCCESS_URL`
+- `RUSTZEN_CLEAR_UPDATE_MANIFEST_URL`
+- `RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN`
 
 Rustzen Clear Pro is configured as a Creem annual subscription at USD $10/year.
-The source default product id is `prod_4Wa3YyJe3bn8hNuotPlSYj`; production env
-may override it with `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`.
+The Creem product id is runtime configuration and must be provided through
+`CREEM_RUSTZEN_CLEAR_PRODUCT_ID`.
 
-Real preview/prod Vercel values are not configured as of `pnpm dlx vercel env ls`
-on 2026-06-15.
+The intended production domains are `https://cloud.rustzen.dev` for the
+dashboard/API and `https://app.rustzen.dev` for public checkout return links.
+Real preview/prod Vercel env values still require live dashboard verification.
 
 ## High-Risk Areas
 

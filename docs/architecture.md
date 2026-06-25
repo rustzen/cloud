@@ -1,11 +1,11 @@
-# rustzen-cloud Architecture
+# cloud Architecture
 
 Status: current architecture
 Date: 2026-06-16
 
 ## Classification
 
-`rustzen-cloud` is a Peripheral RustZen Cloud app: Next.js App Router + Prisma +
+`cloud` is a Peripheral RustZen Cloud app: Next.js App Router + Prisma +
 PostgreSQL intended for Vercel.
 
 ## Responsibility
@@ -124,11 +124,11 @@ File: `src/app/api/billing/checkout/route.ts`
 Creates a Creem checkout session and redirects to Creem. The only supported
 public product is `product=rustzen-clear`; the current Rustzen Clear offer is
 Pro as a USD `$10/year` annual subscription. Source links should pass
-`source=site` when checkout is initiated by `rustzen-site`.
+`source=site` when checkout is initiated by the public `rustzen/app` site.
 
-The route uses `CREEM_API_KEY`, optional `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, and
-`CREEM_CHECKOUT_SUCCESS_URL`. If the product id env is not set, source defaults
-to `prod_4Wa3YyJe3bn8hNuotPlSYj`.
+The route uses `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, and
+`CREEM_CHECKOUT_SUCCESS_URL`. The product id is runtime configuration; if it is
+missing, checkout fails fast instead of using a source fallback.
 
 ## Legacy External Proxy
 
@@ -193,10 +193,11 @@ File: `src/app/api/webhooks/creem/route.ts`
 Verifies the `creem-signature` HMAC SHA-256 signature using
 `CREEM_WEBHOOK_SECRET` and stores a `BillingEvent`. The route handles
 `checkout.completed` and `subscription.paid` as access-granting events for
-Rustzen Clear. For annual subscription renewals, the license record is updated
-with `current_period_end_date` when Creem provides it. `subscription.canceled`
-and `subscription.expired` mark matching Creem-backed licenses inactive or
-expired.
+Rustzen Clear when Creem includes a provider license key in the webhook. The
+desktop activation route can also import a Creem license key on first use. For
+annual subscription renewals, the license record is updated with
+`current_period_end_date` when Creem provides it. `subscription.canceled` and
+`subscription.expired` mark matching Creem-backed licenses inactive or expired.
 
 ## Dashboard Flows
 

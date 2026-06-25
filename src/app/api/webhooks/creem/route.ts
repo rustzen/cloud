@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { normalizeCreemWebhook, RUSTZEN_CLEAR_CREEM_PRODUCT_ID, verifyCreemSignature } from '@/lib/creem';
+import { normalizeCreemWebhook, verifyCreemSignature } from '@/lib/creem';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
@@ -10,7 +10,7 @@ const licenseCreatingEvents = new Set(['checkout.completed', 'subscription.paid'
 const licenseEndingEvents = new Set(['subscription.canceled', 'subscription.expired']);
 
 function productCodeForCreemProduct(productId: string | null) {
-  const rustzenClearProductId = process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID || RUSTZEN_CLEAR_CREEM_PRODUCT_ID;
+  const rustzenClearProductId = process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID;
   return productId === rustzenClearProductId ? 'rustzen-clear' : null;
 }
 

@@ -5,7 +5,6 @@ import {
   buildCreemLicenseActivationRequest,
   getCreemApiBaseUrl,
   normalizeCreemLicense,
-  RUSTZEN_CLEAR_CREEM_PRODUCT_ID,
 } from '@/lib/creem';
 import {
   isLicenseTokenConfigError,
@@ -37,7 +36,7 @@ async function importCreemLicenseIfNeeded(input: {
   if (input.product !== 'rustzen-clear') return;
 
   const apiKey = process.env.CREEM_API_KEY;
-  const productId = process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID || RUSTZEN_CLEAR_CREEM_PRODUCT_ID;
+  const productId = process.env.CREEM_RUSTZEN_CLEAR_PRODUCT_ID;
   if (!apiKey || !productId) return;
 
   const existingLicense = await prisma.license.findFirst({

@@ -4,18 +4,14 @@ export const runtime = 'nodejs';
 
 const DEFAULT_RUSTZEN_CLEAR_UPDATE_MANIFEST_URL =
   'https://zlobtosdpjhocxfj.public.blob.vercel-storage.com/rustzen-clear/releases/latest/zen-clear-updates.json';
+const DEFAULT_RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN =
+  'https://zlobtosdpjhocxfj.public.blob.vercel-storage.com';
 
 const MANIFEST_FETCH_TIMEOUT_MS = 8_000;
 
-function manifestUrls() {
+function manifestUrl() {
   const configuredUrl = process.env.RUSTZEN_CLEAR_UPDATE_MANIFEST_URL?.trim();
-  return [
-    ...new Set(
-      [configuredUrl, DEFAULT_RUSTZEN_CLEAR_UPDATE_MANIFEST_URL].filter(
-        (url): url is string => Boolean(url),
-      ),
-    ),
-  ];
+  return configuredUrl || DEFAULT_RUSTZEN_CLEAR_UPDATE_MANIFEST_URL;
 }
 
 async function fetchManifest(url: string) {
@@ -50,26 +46,93 @@ async function fetchManifest(url: string) {
   }
 }
 
-export async function GET(_request: NextRequest) {
-  const urls = manifestUrls();
-  if (urls.length === 0) {
-    return NextResponse.json({ error: 'update_manifest_not_configured' }, { status: 503 });
+function cloudDownloadUrl(request: NextRequest, assetUrl: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(assetUrl);
+  } catch {
+    return assetUrl;
   }
 
-  const failures: Array<{ url: string; error: string; status: number }> = [];
+  const blobOrigin = process.env.RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN?.trim().replace(/\/+$/, '') ||
+    DEFAULT_RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN;
+  if (parsed.origin !== blobOrigin) {
+    return assetUrl;
+  }
 
-  for (const url of urls) {
-    const result = await fetchManifest(url);
-    if (result.ok) {
-      return NextResponse.json(result.manifest, {
-        headers: {
-          'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+  const pathname = parsed.pathname.replace(/^\/+/, '');
+  if (!pathname.startsWith('rustzen-clear/releases/')) {
+    return assetUrl;
+  }
+
+  const rewritten = new URL(`/api/updates/download/${pathname}`, request.nextUrl.origin);
+  parsed.searchParams.forEach((value, key) => {
+    rewritten.searchParams.set(key, value);
+  });
+  if (!rewritten.searchParams.has('download')) {
+    rewritten.searchParams.set('download', '1');
+  }
+
+  return rewritten.toString();
+}
+
+function rewriteManifestDownloadUrls(request: NextRequest, manifest: unknown) {
+  if (!manifest || typeof manifest !== 'object') {
+    return manifest;
+  }
+
+  const candidate = manifest as {
+    platforms?: Record<string, { url?: unknown }>;
+  };
+
+  if (!candidate.platforms || typeof candidate.platforms !== 'object') {
+    return manifest;
+  }
+
+  const platforms = Object.fromEntries(
+    Object.entries(candidate.platforms).map(([platform, value]) => {
+      if (!value || typeof value !== 'object') {
+        return [platform, value];
+      }
+
+      const entry = value as { url?: unknown };
+      if (typeof entry.url !== 'string') {
+        return [platform, value];
+      }
+
+      return [
+        platform,
+        {
+          ...entry,
+          url: cloudDownloadUrl(request, entry.url),
         },
-      });
-    }
+      ];
+    }),
+  );
 
-    failures.push({ url, error: result.error, status: result.status });
+  return {
+    ...candidate,
+    platforms,
+  };
+}
+
+export async function GET(request: NextRequest) {
+  const url = manifestUrl();
+  const result = await fetchManifest(url);
+  if (result.ok) {
+    return NextResponse.json(rewriteManifestDownloadUrls(request, result.manifest), {
+      headers: {
+        'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+      },
+    });
   }
 
-  return NextResponse.json({ error: 'update_manifest_unavailable', failures }, { status: 502 });
+  return NextResponse.json(
+    {
+      error: 'update_manifest_unavailable',
+      manifest_url: url,
+      reason: result.error,
+    },
+    { status: result.status },
+  );
 }
