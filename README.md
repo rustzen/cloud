@@ -14,7 +14,7 @@ RustZen Cloud is the admin dashboard and cloud API surface for RustZen macOS pro
 Rustzen Clear Pro is sold through Creem as an annual subscription at $10/year.
 The live product id is `prod_4Wa3YyJe3bn8hNuotPlSYj`.
 
-The public marketing website lives in [`rustzen-site`](https://github.com/rustzen/rustzen-site).
+The public product website lives in [`rustzen/app`](https://github.com/rustzen/app).
 
 ## Stack
 

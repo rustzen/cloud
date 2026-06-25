@@ -1,8 +1,8 @@
-# rustzen-cloud Agent Guide
+# cloud Agent Guide
 
 ## Scope
 
-`rustzen-cloud` is a Peripheral RustZen Cloud project. It is intended to be the
+`cloud` is a Peripheral RustZen Cloud project. It is intended to be the
 Next.js dashboard and cloud API surface for RustZen desktop products, including
 license activation, release metadata, Lemon Squeezy webhooks, and an admin
 dashboard.
