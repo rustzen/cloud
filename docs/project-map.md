@@ -90,6 +90,7 @@ Commands below come from `package.json`.
 | `POST /api/ls/activate` | `src/app/api/ls/activate/route.ts` | Legacy proxy activation request to external license server | source |
 | `GET /api/ls/health` | `src/app/api/ls/health/route.ts` | Legacy proxy external license-server health | source |
 | `GET /api/updates/check` | `src/app/api/updates/check/route.ts` | Tauri updater manifest endpoint for Rustzen Clear | untracked source candidate |
+| `GET /api/updates/download/latest?platform=darwin-universal` | `src/app/api/updates/download/[[...path]]/route.ts` | Stable public latest download resolver that reads the update manifest and redirects to the current package | modified tracked |
 | `GET /api/versions?product=<code>` | `src/app/api/versions/route.ts` | Latest release metadata by product/platform | source |
 | `POST /api/webhooks/creem` | `src/app/api/webhooks/creem/route.ts` | Verify Creem signature and synchronize subscription-backed licenses | untracked source candidate |
 | `POST /api/webhooks/lemonsqueezy` | `src/app/api/webhooks/lemonsqueezy/route.ts` | Verify Lemon Squeezy signature and create billing/license records | source |

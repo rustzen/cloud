@@ -42,7 +42,7 @@ From `.env.example`:
 | Admin auth | `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_API_TOKEN` | Dashboard credential handling, session signing, and operational API access |
 | License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `CREEM_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; webhook secrets verify provider HMAC signatures |
 | Creem checkout | `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, `CREEM_CHECKOUT_SUCCESS_URL` | Rustzen Clear Pro checkout and subscription fulfillment; current product id is `prod_4Wa3YyJe3bn8hNuotPlSYj` |
-| Zen Clear updater | `RUSTZEN_CLEAR_UPDATE_MANIFEST_URL`, `RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN` | Manifest source and optional Blob origin allow-list for rewriting update asset URLs through `/api/updates/download` |
+| Zen Clear updater | `RUSTZEN_CLEAR_UPDATE_MANIFEST_URL`, `RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN` | Manifest source and optional Blob origin allow-list for rewriting update asset URLs through `/api/updates/download`; `/api/updates/download/latest` resolves the current package from the manifest |
 | Legacy license proxy | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Optional external license-server compatibility path, not the default desktop-client API |
 
 The production domains are `https://cloud.rustzen.dev` for the dashboard/API
