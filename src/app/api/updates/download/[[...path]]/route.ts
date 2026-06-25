@@ -7,6 +7,7 @@ const DEFAULT_RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN =
 const DEFAULT_RUSTZEN_CLEAR_UPDATE_MANIFEST_URL =
   'https://zlobtosdpjhocxfj.public.blob.vercel-storage.com/rustzen-clear/releases/latest/zen-clear-updates.json';
 const MANIFEST_FETCH_TIMEOUT_MS = 8_000;
+const ASSET_CHECK_TIMEOUT_MS = 4_000;
 
 type RouteContext = {
   params: Promise<{ path?: string[] }> | { path?: string[] };
@@ -20,7 +21,7 @@ function blobOrigin() {
 }
 
 function isAllowedPath(path: string) {
-  return /^rustzen-clear\/releases\/[^/]+\/[^/]+\.app\.tar\.gz$/.test(path);
+  return /^rustzen-clear\/releases\/[^/]+\/[^/]+\.(?:app\.tar\.gz|dmg)$/.test(path);
 }
 
 function manifestUrl() {
@@ -51,7 +52,7 @@ async function fetchManifest() {
   }
 }
 
-function latestAssetUrl(manifest: unknown, platform: string) {
+function latestUpdaterAssetUrl(manifest: unknown, platform: string) {
   if (!manifest || typeof manifest !== 'object') {
     return null;
   }
@@ -66,6 +67,70 @@ function latestAssetUrl(manifest: unknown, platform: string) {
   const url = preferredEntry?.url;
 
   return typeof url === 'string' ? url : null;
+}
+
+function latestDownloadAssetUrl(manifest: unknown, platform: string) {
+  if (!manifest || typeof manifest !== 'object') {
+    return null;
+  }
+
+  const downloads = (manifest as { downloads?: unknown }).downloads;
+  if (!downloads || typeof downloads !== 'object') {
+    return null;
+  }
+
+  const entries = downloads as Record<string, { type?: unknown; url?: unknown }>;
+  const preferredEntry =
+    entries[platform] ?? entries['darwin-universal'] ?? entries['darwin-aarch64'];
+
+  if (preferredEntry?.type !== 'dmg' || typeof preferredEntry.url !== 'string') {
+    return null;
+  }
+
+  return preferredEntry.url;
+}
+
+function inferDmgAssetUrl(manifest: unknown, updaterAssetUrl: string) {
+  if (!manifest || typeof manifest !== 'object') {
+    return null;
+  }
+
+  const version = (manifest as { version?: unknown }).version;
+  if (typeof version !== 'string' || !version.trim()) {
+    return null;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(updaterAssetUrl);
+  } catch {
+    return null;
+  }
+
+  const pathParts = parsed.pathname.split('/');
+  pathParts[pathParts.length - 1] = `ZenClear_${version.trim()}_universal.dmg`;
+  parsed.pathname = pathParts.join('/');
+  parsed.search = '';
+
+  return parsed.toString();
+}
+
+async function assetExists(assetUrl: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ASSET_CHECK_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(assetUrl, {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function cloudDownloadUrl(request: NextRequest, assetUrl: string) {
@@ -95,11 +160,20 @@ function cloudDownloadUrl(request: NextRequest, assetUrl: string) {
 
 async function redirectToLatest(request: NextRequest) {
   const platform = request.nextUrl.searchParams.get('platform') ?? 'darwin-universal';
+  const format = request.nextUrl.searchParams.get('format') ?? 'dmg';
   const manifest = await fetchManifest();
-  const assetUrl = latestAssetUrl(manifest, platform);
+  const updaterAssetUrl = latestUpdaterAssetUrl(manifest, platform);
+  const dmgAssetUrl =
+    latestDownloadAssetUrl(manifest, platform) ??
+    (updaterAssetUrl ? inferDmgAssetUrl(manifest, updaterAssetUrl) : null);
+  const assetUrl = format === 'updater' ? updaterAssetUrl : dmgAssetUrl;
 
   if (!assetUrl) {
     return NextResponse.json({ error: 'latest_update_asset_not_found' }, { status: 404 });
+  }
+
+  if (format !== 'updater' && !(await assetExists(assetUrl))) {
+    return NextResponse.json({ error: 'latest_dmg_asset_not_found' }, { status: 404 });
   }
 
   const target = cloudDownloadUrl(request, assetUrl);
@@ -108,7 +182,7 @@ async function redirectToLatest(request: NextRequest) {
   }
 
   request.nextUrl.searchParams.forEach((value, key) => {
-    if (key !== 'platform') {
+    if (key !== 'platform' && key !== 'format') {
       target.searchParams.set(key, value);
     }
   });
