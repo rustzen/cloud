@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CommandPalette } from '@/components/admin/command-palette';
+import { ThemeToggle } from '@/components/admin/theme-toggle';
+import { ToasterProvider } from '@/components/admin/toaster';
 import { destroyAdminSession } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +31,7 @@ type StatCardProps = {
   value: string | number;
   description?: string;
   icon?: React.ReactNode;
+  trend?: number[];
 };
 
 const navItems = [
@@ -75,9 +79,7 @@ export function AdminShell({ active, title, description, children }: AdminShellP
           <div className="flex h-full flex-col">
             <div className="border-b border-sidebar-border px-6 py-5">
               <Link className="flex items-center gap-3" href="/dashboard">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground">
-                  R
-                </span>
+                <span className="rz-cloud-mark">R</span>
                 <span>
                   <span className="block text-sm font-semibold">RustZen Cloud</span>
                   <span className="block text-xs text-sidebar-foreground/58">Admin control plane</span>
@@ -95,9 +97,9 @@ export function AdminShell({ active, title, description, children }: AdminShellP
                     key={item.key}
                     href={item.href}
                     className={cn(
-                      'flex items-start gap-3 rounded-lg px-3 py-3 text-sm transition-colors',
+                      'relative flex items-start gap-3 rounded-lg px-3 py-3 text-sm transition-colors',
                       isActive
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary'
                         : 'text-sidebar-foreground/72 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
                     )}
                   >
@@ -145,6 +147,8 @@ export function AdminShell({ active, title, description, children }: AdminShellP
                 <p className="mt-0.5 hidden max-w-4xl truncate text-xs text-muted-foreground xl:block">{description}</p>
               </div>
               <div className="flex shrink-0 items-center justify-end gap-2 text-xs text-muted-foreground">
+                <CommandPalette />
+                <ThemeToggle />
                 <form action={logout}>
                   <Button variant="outline" size="sm" type="submit">
                     <LogOut className="h-3.5 w-3.5" />
@@ -176,24 +180,83 @@ export function AdminShell({ active, title, description, children }: AdminShellP
             </nav>
           </header>
 
-          <div className="mx-auto w-full max-w-[1440px] px-5 py-6 lg:px-8 lg:py-8">{children}</div>
+          <div className="mx-auto w-full max-w-[1440px] px-5 py-6 lg:px-8 lg:py-8">
+            <ToasterProvider>{children}</ToasterProvider>
+          </div>
         </section>
       </div>
     </main>
   );
 }
 
-export function StatCard({ title, value, description, icon }: StatCardProps) {
+export function StatCard({ title, value, description, icon, trend }: StatCardProps) {
   return (
-    <Card>
+    <Card className="transition-shadow hover:shadow-md">
       <CardHeader className="flex-row items-start justify-between gap-4 space-y-0 pb-2">
         <div>
           <CardDescription className="text-xs font-medium uppercase tracking-wide">{title}</CardDescription>
           <CardTitle className="mt-3 text-3xl">{value}</CardTitle>
         </div>
-        {icon ? <div className="rounded-md border border-border bg-muted p-2 text-muted-foreground">{icon}</div> : null}
+        {icon ? <div className="rounded-lg bg-brand-100 p-2 text-brand-600">{icon}</div> : null}
       </CardHeader>
-      {description ? <CardContent className="pt-0 text-sm text-muted-foreground">{description}</CardContent> : null}
+      {description || (trend && trend.length > 1) ? (
+        <CardContent className="pt-0">
+          {trend && trend.length > 1 ? <Sparkline values={trend} className="mb-2 h-8 w-full" /> : null}
+          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        </CardContent>
+      ) : null}
+    </Card>
+  );
+}
+
+function Sparkline({ values, className }: { values: number[]; className?: string }) {
+  const width = 100;
+  const height = 28;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const step = width / (values.length - 1);
+  const points = values.map(
+    (v, i) => `${(i * step).toFixed(2)},${(height - ((v - min) / range) * height).toFixed(2)}`,
+  );
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id="rz-spark" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--brand-600)" />
+          <stop offset="100%" stopColor="var(--brand-400)" />
+        </linearGradient>
+      </defs>
+      <path
+        d={`M ${points.join(' L ')}`}
+        fill="none"
+        stroke="url(#rz-spark)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={`rz-skeleton rounded-md ${className ?? ''}`} />;
+}
+
+export function StatCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between gap-4 space-y-0 pb-2">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-7 w-16" />
+        </div>
+        <Skeleton className="h-9 w-9 rounded-lg" />
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Skeleton className="h-3 w-28" />
+      </CardContent>
     </Card>
   );
 }
