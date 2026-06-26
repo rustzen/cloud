@@ -2,8 +2,8 @@
 
 ## Scope
 
-`cloud` is a Peripheral RustZen Cloud project. It is intended to be the
-Next.js dashboard and cloud API surface for RustZen desktop products, including
+`cloud` is a Peripheral Rustzen Cloud project. It is intended to be the
+Next.js dashboard and cloud API surface for Rustzen desktop products, including
 license activation, release metadata, Lemon Squeezy webhooks, and an admin
 dashboard.
 
@@ -46,7 +46,7 @@ truth. They are local runtime/dependency/deploy-link artifacts.
 | `postcss.config.mjs` | source | Tailwind CSS v4 PostCSS integration |
 | `.env.example` | source | Required environment names |
 | `prisma/schema.prisma` | source | Product, license, device, version, billing models |
-| `prisma/seed.mjs` | source | Initial RustZen product records |
+| `prisma/seed.mjs` | source | Initial Rustzen product records |
 | `scripts/with-env.mjs` | source | Loads `.env.local`/`.env` before Prisma CLI commands |
 | `scripts/verify-db.mjs` | source | Verifies DB connection and table counts |
 | `src/app` | source | Next.js App Router pages and API routes |

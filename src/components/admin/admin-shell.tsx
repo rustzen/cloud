@@ -81,7 +81,7 @@ export function AdminShell({ active, title, description, children }: AdminShellP
               <Link className="flex items-center gap-3" href="/dashboard">
                 <span className="rz-cloud-mark">R</span>
                 <span>
-                  <span className="block text-sm font-semibold">RustZen Cloud</span>
+                  <span className="block text-sm font-semibold">Rustzen Cloud</span>
                   <span className="block text-xs text-sidebar-foreground/58">Admin control plane</span>
                 </span>
               </Link>

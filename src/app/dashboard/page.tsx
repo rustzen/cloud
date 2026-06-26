@@ -161,7 +161,7 @@ export default async function DashboardPage() {
     <AdminShell
       active="overview"
       title="Operations overview"
-      description="Monitor RustZen products, license coverage, device bindings, release metadata, and cloud API entrypoints."
+      description="Monitor Rustzen products, license coverage, device bindings, release metadata, and cloud API entrypoints."
     >
       <Suspense fallback={<OverviewSkeleton />}>
         <OverviewContent />
@@ -230,7 +230,7 @@ async function OverviewContent() {
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <AdminSection
           title="Products"
-          description="Configured RustZen clients and their operational coverage."
+          description="Configured Rustzen clients and their operational coverage."
         >
           {data.products.length === 0 ? (
             <AdminEmptyState

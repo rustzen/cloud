@@ -1,6 +1,6 @@
-# RustZen Cloud
+# Rustzen Cloud
 
-RustZen Cloud is the admin dashboard and cloud API surface for RustZen macOS products.
+Rustzen Cloud is the admin dashboard and cloud API surface for Rustzen macOS products.
 
 ## Scope
 

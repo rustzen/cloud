@@ -2,7 +2,7 @@
 
 Status: current project docs
 Date: 2026-06-16
-Project type: Peripheral RustZen Cloud
+Project type: Peripheral Rustzen Cloud
 
 These docs record the current repository facts for `rustzen/cloud` and separate
 source files from ignored local runtime/deploy artifacts.

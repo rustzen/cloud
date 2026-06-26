@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             R
           </span>
           <div>
-            <p className="text-sm font-semibold">RustZen Cloud</p>
+            <p className="text-sm font-semibold">Rustzen Cloud</p>
             <p className="text-xs text-sidebar-foreground/58">Admin control plane</p>
           </div>
         </div>
@@ -55,7 +55,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             Licensing, devices, and releases in one operations surface.
           </h1>
           <p className="mt-5 text-sm leading-6 text-sidebar-foreground/64">
-            Sign in to manage RustZen desktop product metadata while client private data remains local.
+            Sign in to manage Rustzen desktop product metadata while client private data remains local.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               R
             </span>
             <div>
-              <p className="text-sm font-semibold">RustZen Cloud</p>
+              <p className="text-sm font-semibold">Rustzen Cloud</p>
               <p className="text-xs text-muted-foreground">Admin control plane</p>
             </div>
           </div>

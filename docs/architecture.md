@@ -5,7 +5,7 @@ Date: 2026-06-16
 
 ## Classification
 
-`cloud` is a Peripheral RustZen Cloud app: Next.js App Router + Prisma +
+`cloud` is a Peripheral Rustzen Cloud app: Next.js App Router + Prisma +
 PostgreSQL intended for Vercel.
 
 ## Responsibility
@@ -21,8 +21,8 @@ The cloud surface owns:
 
 It must not own:
 
-- Local cleanup data from RustZen Clear.
-- Local clipboard history from RustZen Clipboard.
+- Local cleanup data from Rustzen Clear.
+- Local clipboard history from Rustzen Clipboard.
 - Tauri updater signing, bundle identity, or app data directories.
 - Linux `/opt` release bundles, systemd units, or Rust service install scripts.
 
@@ -58,7 +58,7 @@ Request body:
 }
 ```
 
-`product` is required. RustZen desktop clients send this explicitly so license
+`product` is required. Rustzen desktop clients send this explicitly so license
 keys are resolved against one product namespace.
 
 Success response:
@@ -76,7 +76,7 @@ Success response:
 ```
 
 This license API intentionally uses the client-facing snake_case field names and
-error codes expected by RustZen desktop clients. Error responses include
+error codes expected by Rustzen desktop clients. Error responses include
 `validation_failed`, `license_key_invalid`, `license_not_active`,
 `license_not_found`, `device_not_found`, `invalid_token`,
 `invalid_json`, `device_limit_reached`, `activation_conflict`, and
@@ -133,7 +133,7 @@ missing, checkout fails fast instead of using a source fallback.
 ## Legacy External Proxy
 
 The `/api/ls/*` routes are legacy compatibility routes for a separate external
-license server. They are not the default RustZen desktop-client contract.
+license server. They are not the default Rustzen desktop-client contract.
 
 ### `POST /api/ls/activate`
 
@@ -180,7 +180,7 @@ Verifies the `x-signature` HMAC SHA-256 signature using
 Lemon Squeezy's `meta.webhook_id` when present, then falls back to the order id
 or a hash of the raw request body. The route creates a `License` for
 `order_created` or `subscription_created` events only when
-`custom_data.product` explicitly matches a known RustZen product and the
+`custom_data.product` explicitly matches a known Rustzen product and the
 customer email can be resolved. The billing event write and license creation run
 inside one Prisma transaction so webhook retries can still create the license if
 the side effect failed before the event was committed. Invalid signed JSON
@@ -219,7 +219,7 @@ annual subscription renewals, the license record is updated with
 
 Prisma models:
 
-- `Product`: RustZen product catalog entry.
+- `Product`: Rustzen product catalog entry.
 - `License`: license key, status, plan, provider order, limits, expiration.
 - `LicenseDevice`: activated device identity and last-seen metadata.
 - `AppVersion`: release metadata for update checks.

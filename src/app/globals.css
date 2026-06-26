@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* =========================================================================
-   RustZen Design System — "Zen Blue Glass"
+   Rustzen Design System — "Zen Blue Glass"
    Shared token contract (see docs/design-system.md). Migrated from the default
    shadcn slate palette to the brand system: brand-blue accents, glass cards, and
    a deep zen-navy glass sidebar.
@@ -64,7 +64,7 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(119, 168, 247, 0.16);
 
-  /* RustZen aliases */
+  /* Rustzen aliases */
   --rz-ink: var(--foreground);
   --rz-muted: var(--muted-foreground);
   --rz-border: var(--border);

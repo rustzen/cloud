@@ -2,7 +2,7 @@
 
 Status: current project map
 Date: 2026-06-25
-Project type: Peripheral RustZen Cloud
+Project type: Peripheral Rustzen Cloud
 
 ## Current Facts
 

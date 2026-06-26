@@ -110,7 +110,7 @@ export default async function VersionsPage() {
     <AdminShell
       active="versions"
       title="Release versions"
-      description="Publish release metadata consumed by RustZen desktop update checks."
+      description="Publish release metadata consumed by Rustzen desktop update checks."
     >
       <div className="space-y-6">
         {loadError ? (
