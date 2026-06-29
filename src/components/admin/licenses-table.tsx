@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmAction, type ServerAction } from './confirm-action';
 import { CopyButton } from './copy-button';
 import { DataTable, type Column } from './data-table';
+import { LicenseEditDialog } from './license-edit-dialog';
 
 export type LicenseRowDTO = {
   id: string;
@@ -12,11 +13,14 @@ export type LicenseRowDTO = {
   product: string;
   plan: string;
   status: string;
+  rawStatus: string;
   customer: string;
   provider: string;
   order: string;
   usage: string;
+  maxDevices: number;
   expires: string;
+  expiresAtInput: string;
   expiresSort: string;
   created: string;
   createdSort: string;
@@ -31,9 +35,11 @@ function statusVariant(status: string) {
 
 export function LicensesTable({
   rows,
+  updateAction,
   revokeAction,
 }: {
   rows: LicenseRowDTO[];
+  updateAction: ServerAction;
   revokeAction: ServerAction;
 }) {
   const columns: Column<LicenseRowDTO>[] = [
@@ -77,20 +83,22 @@ export function LicensesTable({
       key: 'actions',
       header: 'Action',
       align: 'right',
-      cell: (r) =>
-        r.status === 'REVOKED' ? (
-          <span className="text-sm text-muted-foreground">-</span>
-        ) : (
-          <ConfirmAction
-            action={revokeAction}
-            fields={{ id: r.id }}
-            triggerLabel="Revoke"
-            triggerIcon={<Ban className="h-4 w-4" />}
-            title="Revoke this license?"
-            description={`Key ${r.key} will be permanently revoked and can no longer activate devices.`}
-            confirmLabel="Revoke"
-          />
-        ),
+      cell: (r) => (
+        <div className="flex justify-end gap-2">
+          <LicenseEditDialog license={r} updateLicense={updateAction} />
+          {r.rawStatus === 'REVOKED' ? null : (
+            <ConfirmAction
+              action={revokeAction}
+              fields={{ id: r.id }}
+              triggerLabel="Revoke"
+              triggerIcon={<Ban className="h-4 w-4" />}
+              title="Revoke this license?"
+              description={`Key ${r.key} will be permanently revoked and can no longer activate devices.`}
+              confirmLabel="Revoke"
+            />
+          )}
+        </div>
+      ),
     },
   ];
 

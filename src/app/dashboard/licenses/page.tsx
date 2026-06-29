@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { randomUUID } from 'crypto';
-import type { Prisma, Product } from '@prisma/client';
+import type { LicenseStatus, Prisma, Product } from '@prisma/client';
 import { KeyRound, MonitorSmartphone } from 'lucide-react';
 import { LicenseCreateDialog } from '@/components/admin/license-create-dialog';
 import { AdminSection, AdminShell, StatCard } from '@/components/admin/admin-shell';
@@ -22,6 +22,33 @@ type LicenseData = {
   loadError: string | null;
 };
 
+const editableLicenseStatuses = ['ACTIVE', 'INACTIVE', 'EXPIRED'] as const satisfies readonly LicenseStatus[];
+
+function parseEditableLicenseStatus(value: FormDataEntryValue | null): LicenseStatus {
+  if (typeof value === 'string' && (editableLicenseStatuses as readonly string[]).includes(value)) {
+    return value as LicenseStatus;
+  }
+
+  throw new Error('Invalid editable license status');
+}
+
+function parseOptionalDate(value: FormDataEntryValue | null) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Invalid expiration date');
+  }
+
+  return date;
+}
+
+function parsePositiveInt(value: FormDataEntryValue | null, fallback: number) {
+  const number = Number(value ?? fallback);
+  return Number.isFinite(number) && number >= 1 ? Math.floor(number) : fallback;
+}
+
 async function createLicense(formData: FormData) {
   'use server';
 
@@ -30,8 +57,8 @@ async function createLicense(formData: FormData) {
 
   const productCode = String(formData.get('product') ?? '');
   const plan = String(formData.get('plan') ?? 'pro');
-  const maxDevices = Number(formData.get('maxDevices') ?? 3);
-  const expiresAtValue = String(formData.get('expiresAt') ?? '');
+  const maxDevices = parsePositiveInt(formData.get('maxDevices'), 3);
+  const expiresAt = parseOptionalDate(formData.get('expiresAt'));
 
   const product = await prisma.product.findUnique({ where: { code: productCode } });
   if (!product) throw new Error('Product not found');
@@ -41,8 +68,39 @@ async function createLicense(formData: FormData) {
       productId: product.id,
       licenseKey: `RZ-${randomUUID().replaceAll('-', '').slice(0, 24).toUpperCase()}`,
       plan,
-      maxDevices: Number.isFinite(maxDevices) ? maxDevices : 3,
-      expiresAt: expiresAtValue ? new Date(expiresAtValue) : null,
+      maxDevices,
+      expiresAt,
+    },
+  });
+
+  redirect('/dashboard/licenses');
+}
+
+async function updateLicense(formData: FormData) {
+  'use server';
+
+  await assertAdminRequestAllowed();
+  if (!(await hasAdminSession())) redirect('/login');
+
+  const id = String(formData.get('id') ?? '');
+  if (!id) throw new Error('License id is required');
+
+  const existing = await prisma.license.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+  if (!existing) throw new Error('License not found');
+
+  const status =
+    existing.status === 'REVOKED' ? existing.status : parseEditableLicenseStatus(formData.get('status'));
+
+  await prisma.license.update({
+    where: { id },
+    data: {
+      plan: String(formData.get('plan') ?? 'pro').trim() || 'pro',
+      status,
+      maxDevices: parsePositiveInt(formData.get('maxDevices'), 3),
+      expiresAt: parseOptionalDate(formData.get('expiresAt')),
     },
   });
 
@@ -86,6 +144,20 @@ function fmtDateTime(value: Date | null) {
   return value ? value.toISOString().replace('T', ' ').slice(0, 16) : '-';
 }
 
+function fmtDateTimeLocalInput(value: Date | null) {
+  if (!value) return '';
+  const localTime = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
+  return localTime.toISOString().slice(0, 16);
+}
+
+function effectiveLicenseStatus(license: LicenseRow): LicenseStatus {
+  if (license.status === 'ACTIVE' && license.expiresAt && license.expiresAt.getTime() <= Date.now()) {
+    return 'EXPIRED';
+  }
+
+  return license.status;
+}
+
 async function loadLicenseData(): Promise<LicenseData> {
   try {
     const [products, licenses] = await Promise.all([
@@ -113,12 +185,15 @@ export default async function LicensesPage() {
     key: license.licenseKey,
     product: license.product.name,
     plan: license.plan,
-    status: license.status,
+    status: effectiveLicenseStatus(license),
+    rawStatus: license.status,
     customer: license.customerEmail ?? '-',
     provider: license.provider ?? '-',
     order: license.providerOrderId ?? '-',
     usage: `${license.devices.length}/${license.maxDevices}`,
+    maxDevices: license.maxDevices,
     expires: fmtDate(license.expiresAt),
+    expiresAtInput: fmtDateTimeLocalInput(license.expiresAt),
     expiresSort: iso(license.expiresAt),
     created: fmtDateTime(license.createdAt),
     createdSort: iso(license.createdAt),
@@ -141,7 +216,7 @@ export default async function LicensesPage() {
     })),
   );
 
-  const activeLicenses = licenses.filter((license) => license.status === 'ACTIVE').length;
+  const activeLicenses = licenses.filter((license) => effectiveLicenseStatus(license) === 'ACTIVE').length;
   const totalCapacity = licenses.reduce((sum, license) => sum + license.maxDevices, 0);
 
   return (
@@ -170,15 +245,17 @@ export default async function LicensesPage() {
           <StatCard title="Capacity" value={`${deviceRows.length}/${totalCapacity}`} description="Bound devices vs total limit" icon={<MonitorSmartphone className="h-4 w-4" />} />
         </div>
 
-        <div className="flex items-center justify-end">
-          <LicenseCreateDialog
-            products={products.map((product) => ({ code: product.code, name: product.name }))}
-            createLicense={createLicense}
-          />
-        </div>
-
-        <AdminSection title="License list" description="All license records with key, customer, order, product, device usage, and status. Search, sort, and paginate inline.">
-          <LicensesTable rows={licenseRows} revokeAction={revokeLicense} />
+        <AdminSection
+          title="License list"
+          description="All license records with key, customer, order, product, device usage, and status. Search, sort, and paginate inline."
+          action={
+            <LicenseCreateDialog
+              products={products.map((product) => ({ code: product.code, name: product.name }))}
+              createLicense={createLicense}
+            />
+          }
+        >
+          <LicensesTable rows={licenseRows} updateAction={updateLicense} revokeAction={revokeLicense} />
         </AdminSection>
 
         <AdminSection title="Device list" description="All activated clients currently bound to license keys.">
