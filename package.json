@@ -1,5 +1,5 @@
 {
-  "name": "@rustzen/cloud",
+  "name": "@rustzen/rzen-platform",
   "version": "0.1.0",
   "private": true,
   "scripts": {

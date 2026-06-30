@@ -1,4 +1,4 @@
-# Rustzen Design System — Cloud Dashboard
+# Rustzen Design System — Platform Dashboard
 
 > Brand & UI spec for the **rzen-platform** admin dashboard (Next.js + Tailwind v4 + shadcn/ui).
 > The **token system is shared** with the marketing site and the product GUI — see
@@ -59,7 +59,7 @@ verbatim under `@theme inline` / `:root` / `.dark`.
 ### 2.1 Admin shell
 
 - **Sidebar** — zen-navy glass (`backdrop-blur`, brand-200 hairline borders), brand
-  mark + "Rustzen Cloud / Control plane". Active item: brand-400 left marker (4px)
+  mark + "Rustzen Platform / Control plane". Active item: brand-400 left marker (4px)
   + `--sidebar-accent` fill. Bottom: admin-only notice card + Sign out. Collapsible
   on desktop; sheet on mobile.
 - **Topbar** — sticky glass (`bg-background/80 backdrop-blur`), page title +

@@ -3,7 +3,7 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Rustzen Cloud',
+  title: 'Rustzen Platform',
   description: 'Cloud dashboard and API surface for Rustzen macOS products.',
 };
 

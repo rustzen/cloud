@@ -183,7 +183,7 @@ textarea {
 }
 
 /* brand mark + helpers */
-.rz-cloud-mark {
+.rz-platform-mark {
   display: inline-flex;
   width: 32px;
   height: 32px;
@@ -198,14 +198,14 @@ textarea {
   box-shadow: 0 8px 18px rgba(63, 127, 217, 0.3);
 }
 
-.rz-cloud-panel {
+.rz-platform-panel {
   border: 1px solid var(--rz-border);
   border-radius: var(--radius);
   background: var(--rz-panel);
   box-shadow: 0 10px 28px rgba(31, 48, 86, 0.06);
 }
 
-.rz-cloud-pill {
+.rz-platform-pill {
   display: inline-flex;
   align-items: center;
   border: 1px solid rgba(119, 168, 247, 0.32);

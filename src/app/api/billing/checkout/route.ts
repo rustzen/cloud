@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       productIds,
       requestId: `rz_${productCode}_${randomUUID()}`,
       successUrl: successUrl(request),
-      source: request.nextUrl.searchParams.get('source') ?? 'rustzen-cloud',
+      source: request.nextUrl.searchParams.get('source') ?? 'rzen-platform',
     });
   } catch (error) {
     return NextResponse.json(

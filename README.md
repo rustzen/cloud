@@ -1,6 +1,6 @@
 # Rustzen Platform
 
-Rustzen Platform is the admin dashboard and cloud API surface for Rustzen macOS products.
+Rustzen Platform is the admin dashboard and platform API surface for Rustzen macOS products.
 
 ## Scope
 

@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             R
           </span>
           <div>
-            <p className="text-sm font-semibold">Rustzen Cloud</p>
+            <p className="text-sm font-semibold">Rustzen Platform</p>
             <p className="text-xs text-sidebar-foreground/58">Admin control plane</p>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               R
             </span>
             <div>
-              <p className="text-sm font-semibold">Rustzen Cloud</p>
+              <p className="text-sm font-semibold">Rustzen Platform</p>
               <p className="text-xs text-muted-foreground">Admin control plane</p>
             </div>
           </div>

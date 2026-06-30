@@ -63,7 +63,7 @@ export function buildCreemCheckoutRequest(input: {
     success_url: input.successUrl,
     metadata: {
       product: input.productCode,
-      source: input.source ?? 'rustzen-cloud',
+      source: input.source ?? 'rzen-platform',
     },
   };
 }

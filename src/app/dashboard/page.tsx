@@ -161,7 +161,7 @@ export default async function DashboardPage() {
     <AdminShell
       active="overview"
       title="Operations overview"
-      description="Monitor Rustzen products, license coverage, device bindings, release metadata, and cloud API entrypoints."
+      description="Monitor Rustzen products, license coverage, device bindings, release metadata, and platform API entrypoints."
     >
       <Suspense fallback={<OverviewSkeleton />}>
         <OverviewContent />

@@ -30,7 +30,7 @@ test('builds a checkout request for the Rustzen Clear Creem product', () => {
     success_url: 'https://app.rustzen.dev/checkout/success',
     metadata: {
       product: 'rustzen-clear',
-      source: 'rustzen-cloud',
+      source: 'rzen-platform',
     },
   });
 });

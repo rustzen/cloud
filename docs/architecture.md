@@ -10,7 +10,7 @@ PostgreSQL intended for Vercel.
 
 ## Responsibility
 
-The cloud surface owns:
+The platform surface owns:
 
 - Admin dashboard for products, licenses, devices, orders, and versions.
 - License activation backed by Prisma/PostgreSQL.

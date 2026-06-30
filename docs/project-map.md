@@ -67,7 +67,7 @@ Commands below come from `package.json`.
 | `src/app/dashboard/page.tsx` | Dashboard index | source |
 | `src/app/dashboard/licenses/page.tsx` | License and device management | source |
 | `src/app/dashboard/versions/page.tsx` | Release metadata management | source |
-| `src/app/api/**/route.ts` | Cloud API routes | mixed tracked and untracked source candidates |
+| `src/app/api/**/route.ts` | Platform API routes | mixed tracked and untracked source candidates |
 | `src/lib/auth.ts` | Cookie session signing and password check | source |
 | `src/lib/license-server.ts` | Legacy license-server proxy helper | source |
 | `src/lib/license-api.ts` | Local license API token, status, and error helpers | untracked source candidate |

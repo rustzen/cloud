@@ -3,7 +3,7 @@
 ## Scope
 
 `rzen-platform` is the local checkout for the `rustzen/rzen-platform` repository. It is intended to be the
-Next.js dashboard and cloud API surface for Rustzen desktop products, including
+Next.js dashboard and platform API surface for Rustzen desktop products, including
 license activation, release metadata, Lemon Squeezy webhooks, and an admin
 dashboard.
 
