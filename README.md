@@ -6,12 +6,10 @@ Rustzen Platform is the admin dashboard and platform API surface for Rustzen mac
 
 - Product, license, device, order, and version management dashboard
 - License activation and version-check API routes
-- Billing provider checkout and webhook handling for Rustzen Clear Pro
+- Billing checkout and webhook handling for Rustzen Clear Pro
 - Legacy Lemon Squeezy webhook handling
 - License server proxy endpoints
 - PostgreSQL access through Prisma
-
-
 
 ## Stack
 
@@ -42,7 +40,7 @@ pnpm build
 ## Environment
 
 Copy `.env.example` to `.env.local` and configure the database, dashboard auth,
-license server, Billing provider API key, and webhook secrets.
+license server, billing provider API key, product identifier, and webhook secrets.
 
 For local database validation, PostgreSQL 17 from Homebrew was used with a local
 `rustzen_cloud_test` database.

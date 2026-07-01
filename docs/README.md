@@ -25,12 +25,12 @@ source files from ignored local runtime/deploy artifacts.
   `src/app/api/licenses/activate/route.ts`
 - untracked source candidates during this standardization pass:
   `src/app/api/billing/checkout/route.ts`,
-  `src/app/api/webhooks/billing-provider/route.ts`,
+  billing provider webhook route,
   `src/app/api/licenses/verify/route.ts`,
   `src/app/api/licenses/refresh/route.ts`,
   `src/app/api/licenses/deactivate/route.ts`,
   `src/app/api/licenses/health/route.ts`, `src/lib/license-api.ts`,
-  `src/lib/billing-provider.ts`, `src/lib/billing-provider.test.ts`
+  provider integration helpers and tests
 - ignored/local-only: `.next/`, `.vercel/`, `node_modules/`
 - ignored local secret/runtime env: `.env.local`, `.env`, `.env.*.local`
 - verified locally on 2026-06-15: `pnpm db:generate`, `pnpm db:push`,
@@ -41,5 +41,5 @@ Vercel project linkage exists locally, but `vercel env ls` returned no configure
 environment variables on 2026-06-15. Production deploy/env state remains not
 verified.
 
-Rustzen Clear Pro checkout is modeled as a Billing provider subscription: USD
-website-listed Pro price, product identifier ``.
+Live billing provider product identifierentifiers are runtime configuration only and
+must not be committed to repository documentation or examples.

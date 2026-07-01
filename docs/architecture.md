@@ -15,7 +15,7 @@ The platform surface owns:
 - Admin dashboard for products, licenses, devices, orders, and versions.
 - License activation backed by Prisma/PostgreSQL.
 - Release metadata lookup for desktop clients.
-- Billing provider checkout and webhook ingestion for Rustzen Clear Pro subscriptions.
+- Billing checkout and webhook ingestion for Rustzen Clear Pro subscriptions.
 - Legacy Lemon Squeezy webhook ingestion while the old route remains present.
 - Legacy proxy calls to an external license server when explicitly configured.
 
@@ -34,8 +34,8 @@ It must not own:
 | API routes | `src/app/api/**/route.ts` | source |
 | Auth/session | `src/lib/auth.ts` | source |
 | Database access | `src/lib/prisma.ts`, `prisma/schema.prisma` | source |
-| Billing checkout | `src/app/api/billing/checkout/route.ts`, `src/lib/billing-provider.ts` | untracked source candidate |
-| Billing webhook | `src/app/api/webhooks/billing-provider/route.ts`, `src/app/api/webhooks/lemonsqueezy/route.ts` | mixed source |
+| Billing checkout | `src/app/api/billing/checkout/route.ts`, provider helper library | untracked source candidate |
+| Billing webhook | Provider webhook route and legacy Lemon Squeezy route | mixed source |
 | Deployment link | `.vercel/` | ignored/local-only |
 
 ## API Contracts
@@ -121,9 +121,8 @@ succeeds. Database errors return `503` with `database_unavailable`.
 
 File: `src/app/api/billing/checkout/route.ts`
 
-Creates a Billing provider checkout session and redirects to Billing provider. The only supported
-public product is `product=rustzen-clear`; the current Rustzen Clear offer is
-Pro as a USD `website-listed Pro price` subscription. Source links should pass
+Creates a billing checkout session and redirects to the provider. The only
+supported public product is `product=rustzen-clear`. Source links should pass
 `source=site` when checkout is initiated by the public `rustzen/rzen-portal` site.
 
 The route uses `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, and
@@ -186,18 +185,19 @@ inside one Prisma transaction so webhook retries can still create the license if
 the side effect failed before the event was committed. Invalid signed JSON
 returns `invalid_json` instead of falling through to a framework error.
 
-### `POST /api/webhooks/billing-provider`
+### Billing Provider Webhook
 
-File: `src/app/api/webhooks/billing-provider/route.ts`
+File: billing provider webhook route
 
-Verifies the `billing-provider-signature` HMAC SHA-256 signature using
-`CREEM_WEBHOOK_SECRET` and stores a `BillingEvent`. The route handles
+Verifies the provider HMAC SHA-256 signature using `CREEM_WEBHOOK_SECRET` and
+stores a `BillingEvent`. The route handles
 `checkout.completed` and `subscription.paid` as access-granting events for
-Rustzen Clear when Billing provider includes a provider license key in the webhook. The
-desktop activation route can also import a Billing provider license key on first use. For
+Rustzen Clear when the provider includes a license key in the webhook. The
+desktop activation route can also import a provider license key on first use. For
 subscription renewals, the license record is updated with
-`current_period_end_date` when the provider supplies it. `subscription.canceled` and
-`subscription.expired` mark matching provider-backed licenses inactive or expired.
+`current_period_end_date` when the provider supplies it. `subscription.canceled`
+and `subscription.expired` mark matching provider-backed licenses inactive or
+expired.
 
 ## Dashboard Flows
 
@@ -235,8 +235,8 @@ The following changes require explicit review before deploy or commit:
 
 - Vercel project/team/domain, preview/prod env, and runtime target changes.
 - Prisma schema, generated client, or database migration changes.
-- `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, Billing provider product identifierentifiers, checkout URLs, or
-  Billing provider webhook payload mapping.
+- `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, billing product identifierentifiers, checkout URLs,
+  or billing webhook payload mapping.
 - `LEMONSQUEEZY_WEBHOOK_SECRET` verification logic or webhook payload mapping.
 - `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_USERNAME`,
   `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_API_TOKEN`, session cookie behavior,
@@ -251,5 +251,5 @@ The following changes require explicit review before deploy or commit:
 - Local dev server or browser behavior.
 - Vercel domain, env values, deployment output, or runtime limits.
 - Production webhook delivery from Lemon Squeezy.
-- Production webhook delivery from Billing provider.
+- Production webhook delivery from the billing provider.
 - Desktop client integration against these routes.

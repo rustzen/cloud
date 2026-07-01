@@ -41,7 +41,7 @@ From `.env.example`:
 | Public URLs | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL` | `NEXT_PUBLIC_APP_URL` should point at `https://cloud.rustzen.dev`; `NEXT_PUBLIC_SITE_URL` should point at `https://app.rustzen.dev` for public checkout return links |
 | Admin auth | `RUSTZEN_ADMIN_USERNAME`, `RUSTZEN_ADMIN_PASSWORD`, `RUSTZEN_ADMIN_SECRET`, `RUSTZEN_ADMIN_API_TOKEN` | Dashboard credential handling, session signing, and operational API access |
 | License/webhook | `LICENSE_JWT_SECRET`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `CREEM_WEBHOOK_SECRET` | `LICENSE_JWT_SECRET` signs opaque license bearer tokens and is required in production; webhook secrets verify provider HMAC signatures |
-| Billing provider checkout | `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, `CREEM_CHECKOUT_SUCCESS_URL` | Rustzen Clear Pro checkout and subscription fulfillment; current product identifier is `` |
+| Billing checkout | `CREEM_API_KEY`, `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`, `CREEM_CHECKOUT_SUCCESS_URL` | Rustzen Clear Pro checkout and subscription fulfillment; live product identifierentifiers must be configured through deployment secrets |
 | Zen Clear updater/downloads | `RUSTZEN_CLEAR_UPDATE_MANIFEST_URL`, `RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN` | Manifest source and optional Blob origin allow-list for rewriting update asset URLs through `/api/updates/download`; `/api/updates/download/latest` resolves the current DMG for manual downloads, while `format=updater` resolves the updater archive |
 | Legacy license proxy | `RUSTZEN_LICENSE_SERVER_URL`, `RUSTZEN_LICENSE_SERVER_TOKEN` | Optional external license-server compatibility path, not the default desktop-client API |
 
@@ -50,10 +50,9 @@ and `https://app.rustzen.dev` for the public site. The latest verified
 production deployment is `dpl_EfgfPjCAnkU4uDqTkRHS1ghUgoTh`, created from
 GitHub `rustzen/rzen-platform` commit `4f8c0d1` after the repository was made public.
 Preview and production Vercel env values require live dashboard verification.
-Rustzen Clear Pro is a Billing provider subscription at website-listed Pro price. Billing provider webhook
-events must identify the Rustzen product through metadata or the configured
-product identifier; webhook ingestion records events without creating a license when the
-product cannot be resolved.
+Billing webhook events must identify the Rustzen product through metadata or the
+configured product identifier; webhook ingestion records events without creating a
+license when the product cannot be resolved.
 
 ## Local Database Verification
 
@@ -93,9 +92,8 @@ Before any deploy:
    `pnpm db:push`, `pnpm db:seed`, and `pnpm db:verify`.
 7. Confirm Vercel project/team/domain and keep Prisma-backed API routes on the
    Node runtime.
-8. Confirm the Billing provider live product remains subscription-only:
-   `price=1000`, `currency=USD`, `billing_type=recurring`, and
-   `billing_period=every-year`.
+8. Confirm live billing product configuration in the provider dashboard without
+   copying live identifiers into repository files.
 9. Record verification evidence in the task report.
 
 `pnpm db:push` against production, production Vercel deploys, and real webhook
@@ -117,6 +115,6 @@ testing require explicit user approval.
 - Vercel preview/prod environment values; current Vercel project has no env vars.
 - Production PostgreSQL database availability.
 - Production Prisma migration state.
-- Billing provider webhook delivery and live product configuration.
+- Billing webhook delivery and live product configuration.
 - Lemon Squeezy webhook delivery for the legacy route.
 - Desktop client consumption of activation or version routes.

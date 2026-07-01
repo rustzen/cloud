@@ -86,13 +86,13 @@ Commands below come from `package.json`.
 | `POST /api/licenses/refresh` | `src/app/api/licenses/refresh/route.ts` | Refresh license token and status | untracked source candidate |
 | `POST /api/licenses/deactivate` | `src/app/api/licenses/deactivate/route.ts` | Remove current device binding | untracked source candidate |
 | `GET /api/licenses/health` | `src/app/api/licenses/health/route.ts` | Local Prisma-backed license API health | untracked source candidate |
-| `GET /api/billing/checkout?product=rustzen-clear` | `src/app/api/billing/checkout/route.ts` | Create a Billing provider checkout for Rustzen Clear Pro subscription | untracked source candidate |
+| `GET /api/billing/checkout?product=rustzen-clear` | `src/app/api/billing/checkout/route.ts` | Create a billing checkout for Rustzen Clear Pro | untracked source candidate |
 | `POST /api/ls/activate` | `src/app/api/ls/activate/route.ts` | Legacy proxy activation request to external license server | source |
 | `GET /api/ls/health` | `src/app/api/ls/health/route.ts` | Legacy proxy external license-server health | source |
 | `GET /api/updates/check` | `src/app/api/updates/check/route.ts` | Tauri updater manifest endpoint for Rustzen Clear | untracked source candidate |
 | `GET /api/updates/download/latest?platform=darwin-universal` | `src/app/api/updates/download/[[...path]]/route.ts` | Stable public latest download resolver that reads the update manifest and redirects manual downloads to the current DMG | modified tracked |
 | `GET /api/versions?product=<code>` | `src/app/api/versions/route.ts` | Latest release metadata by product/platform | source |
-| `POST /api/webhooks/billing-provider` | `src/app/api/webhooks/billing-provider/route.ts` | Verify Billing provider signature and synchronize subscription-backed licenses | untracked source candidate |
+| Billing provider webhook route | Provider webhook handler | Verify billing provider signatures and synchronize subscription-backed licenses | untracked source candidate |
 | `POST /api/webhooks/lemonsqueezy` | `src/app/api/webhooks/lemonsqueezy/route.ts` | Verify Lemon Squeezy signature and create billing/license records | source |
 
 ## Data Model
@@ -134,9 +134,8 @@ From `.env.example`:
 - `RUSTZEN_CLEAR_UPDATE_MANIFEST_URL`
 - `RUSTZEN_CLEAR_UPDATE_BLOB_ORIGIN`
 
-Rustzen Clear Pro is configured as a Billing provider subscription at website-listed Pro price.
-The Billing provider product identifier is runtime configuration and must be provided through
-`CREEM_RUSTZEN_CLEAR_PRODUCT_ID`.
+Live billing product identifierentifiers are runtime configuration and must be provided
+through `CREEM_RUSTZEN_CLEAR_PRODUCT_ID`; live values must not be committed.
 
 The intended production domains are `https://cloud.rustzen.dev` for the
 dashboard/API and `https://app.rustzen.dev` for public checkout return links.
@@ -150,8 +149,8 @@ Real preview/prod Vercel env values still require live dashboard verification.
   gate.
 - `pnpm db:push` mutates the target database. Use only against local test DB
   unless production approval is explicit.
-- Billing provider checkout depends on `CREEM_API_KEY`; Billing provider webhook verification depends
-  on `CREEM_WEBHOOK_SECRET`.
+- Billing checkout depends on `CREEM_API_KEY`; webhook verification depends on
+  `CREEM_WEBHOOK_SECRET`.
 - Lemon Squeezy webhook verification depends on `LEMONSQUEEZY_WEBHOOK_SECRET`
   for the legacy route.
 - Admin session signing depends on `RUSTZEN_ADMIN_SECRET`; the code contains a
